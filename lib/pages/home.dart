@@ -13,6 +13,19 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: appBar(),
+      body: Column(
+        children: [
+          Container(
+            
+            child: TextField(
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white
+              ),
+            ),
+          )
+        ]
+      )
     );
   }
 
