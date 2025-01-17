@@ -76,9 +76,13 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
-    - family: Milanello
+  #  - family: Milanello
+  #    fonts:
+  #      - asset: fonts/MilanelloPersonal.otf
+    - family: Roboto
       fonts:
-        - asset: fonts\MilanelloPersonal.otf
+        - asset: fonts/Roboto.ttf
+        - asset: fonts/RobotoItalic.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro
