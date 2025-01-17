@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 class Elevador {
   static const List<String> alturas = [
     'até 0,50m',
