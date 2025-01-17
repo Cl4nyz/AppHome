@@ -23,6 +23,16 @@ class Elevador {
     19190.08
   ];
 
+  static const List<String> cabines = [
+    '1,10m',
+    '2,10m'
+  ];
+
+  static const List<double> valoresCabines = [
+    5184.00,
+    10943.00
+  ];
+
   static const List<String> adicionais = [
     'Trocar cancela por portão em chapa (unidade)',
     'Rampa de acesso (unidade)',

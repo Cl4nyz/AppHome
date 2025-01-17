@@ -28,6 +28,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int pos = 0;
+  int posCabine = 0;
   bool trifasico = true;
   List<int> quantias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   
@@ -47,39 +48,45 @@ class _HomePageState extends State<HomePage> {
             () => setState(() => pos = (pos - 1) % Elevador.alturas.length),
             () => setState(() => pos = (pos + 1) % Elevador.alturas.length)
           ),
-          const SizedBox(height: 10,),
           _selectionBox(
-            bigTitle('É trifásico?'),
-            trifasico ? 'Sim' : 'Não',
+            bigTitle('Altura cabine'),
+            Elevador.cabines[posCabine],
             ALTGRANDE,
             TEXTOGRAN,
-            () => setState(() => trifasico = !trifasico),
-            () => setState(() => trifasico = !trifasico)
+            () => setState(() => posCabine = (posCabine - 1) % Elevador.cabines.length),
+            () => setState(() => posCabine = (posCabine + 1) % Elevador.cabines.length)
           ),
-          const SizedBox(height: 10,),
-          Container(
-            height: 300,
-            color: Color.fromARGB(255, 161, 183, 194),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListView.separated(
-                shrinkWrap: true,
-                separatorBuilder: (context, index) => const SizedBox(height: 1.5,),
-                itemCount: quantias.length,
-                itemBuilder: (context, index) {
-                  return _selectionBox(
-                    smallTitle(Elevador.adicionais[index]),
-                    quantias[index].toString(),
-                    ALTPEQ,
-                    TEXTOPEQ,
-                    () => setState(() { if (quantias[index] > 0) quantias[index]--;}),
-                    () => setState(() => quantias[index]++),
-                    );
-                },
-              ),
+          if (pos <= 2)                          // Opção de trifásico somente para 3 primeiras alturas
+            _selectionBox(
+              bigTitle('É trifásico?'),
+              trifasico ? 'Sim' : 'Não',
+              ALTGRANDE,
+              TEXTOGRAN,
+              () => setState(() => trifasico = !trifasico),
+              () => setState(() => trifasico = !trifasico)
             ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                color: AZULESCURO,
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'ADICIONAIS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: TAMTITULO*0.8,
+                        fontWeight: FontWeight.w900
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            _scrollableMenu(),
+            ],
           ),
-          const SizedBox(height: 10,),
           _totalValueDisplay(totalValue()),
           const SizedBox(height: 20,),
         ]
@@ -87,11 +94,36 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Container _scrollableMenu() {
+    return Container(
+          height: 250,
+          color: Color.fromARGB(255, 161, 183, 194),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ListView.separated(
+              shrinkWrap: true,
+              separatorBuilder: (context, index) => const SizedBox(height: 1.5,),
+              itemCount: quantias.length,
+              itemBuilder: (context, index) {
+                return _selectionBox(
+                  smallTitle(Elevador.adicionais[index]),
+                  quantias[index].toString(),
+                  ALTPEQ,
+                  TEXTOPEQ,
+                  () => setState(() { if (quantias[index] > 0) quantias[index]--;}),
+                  () => setState(() => quantias[index]++),
+                  );
+              },
+            ),
+          ),
+        );
+  }
+
   double totalValue() {
     double value = Elevador.valores[pos];
     if (!trifasico && pos <= 2)
       value *= 1.0826;
-
+    value += Elevador.valoresCabines[posCabine];
     for (int i = 0; i < quantias.length; i++) {
       value += (Elevador.valoresAdicionais[i] * quantias[i]);
     }
@@ -154,55 +186,58 @@ class _HomePageState extends State<HomePage> {
         );
   }
 
-  Column _selectionBox(Text titulo, String displayText, double height, double textSize, VoidCallback leftTap, VoidCallback rightTap) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        titulo,
-        Container(
-          height: height,
-          margin: EdgeInsets.symmetric(horizontal: 30.0),
-          decoration: BoxDecoration(
-            color: AZULCLARO,
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              InkWell(
-                onTap: leftTap,
-                child: Container(
-                  height: TAMSETA,
-                  width: TAMSETA,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: SvgPicture.asset('assets/icons/doubleArrowLeft.svg'),
+  Padding _selectionBox(Text titulo, String displayText, double height, double textSize, VoidCallback leftTap, VoidCallback rightTap) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          titulo,
+          Container(
+            height: height,
+            margin: EdgeInsets.symmetric(horizontal: 30.0),
+            decoration: BoxDecoration(
+              color: AZULCLARO,
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                InkWell(
+                  onTap: leftTap,
+                  child: Container(
+                    height: TAMSETA,
+                    width: TAMSETA,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SvgPicture.asset('assets/icons/doubleArrowLeft.svg'),
+                    ),
                   ),
                 ),
-              ),
-              Text(
-                displayText,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: textSize,
-                  fontWeight: FontWeight.w600
-                ),
-              ),
-              InkWell(
-                onTap: rightTap,
-                child: Container(
-                  height: TAMSETA,
-                  width: TAMSETA,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: SvgPicture.asset('assets/icons/doubleArrowRight.svg'),
+                Text(
+                  displayText,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: textSize,
+                    fontWeight: FontWeight.w600
                   ),
                 ),
-              )
-            ],
+                InkWell(
+                  onTap: rightTap,
+                  child: Container(
+                    height: TAMSETA,
+                    width: TAMSETA,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SvgPicture.asset('assets/icons/doubleArrowRight.svg'),
+                    ),
+                  ),
+                )
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
