@@ -16,7 +16,7 @@ const TAMTITULO = 25.0;
 const TAMSETA = 45.0;
 const ALTGRANDE = 60.0;
 const ALTPEQ = 32.0;
-const TEXTOGRAN = 24.0;
+const TEXTOGRAN = 22.0;
 const TEXTOPEQ = 18.0;
 
 class HomePage extends StatefulWidget {
@@ -32,6 +32,7 @@ class _HomePageState extends State<HomePage> {
   bool trifasico = true;
   List<int> quantias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   
+  TextEditingController _controller = TextEditingController();
   
   @override
   Widget build(BuildContext context) {
@@ -41,7 +42,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           //_searchField(),
           _selectionBox(
-            bigTitle('Altura de elevação'),
+            bigTitle('ALTURA DE ELEVAÇÃO'),
             Elevador.alturas[pos],
             ALTGRANDE,
             TEXTOGRAN,
@@ -49,22 +50,27 @@ class _HomePageState extends State<HomePage> {
             () => setState(() => pos = (pos + 1) % Elevador.alturas.length)
           ),
           _selectionBox(
-            bigTitle('Altura cabine'),
+            bigTitle('ALTURA CABINE'),
             Elevador.cabines[posCabine],
             ALTGRANDE,
             TEXTOGRAN,
             () => setState(() => posCabine = (posCabine - 1) % Elevador.cabines.length),
             () => setState(() => posCabine = (posCabine + 1) % Elevador.cabines.length)
           ),
-          if (pos <= 2)                          // Opção de trifásico somente para 3 primeiras alturas
-            _selectionBox(
-              bigTitle('É trifásico?'),
-              trifasico ? 'Sim' : 'Não',
-              ALTGRANDE,
-              TEXTOGRAN,
-              () => setState(() => trifasico = !trifasico),
-              () => setState(() => trifasico = !trifasico)
-            ),
+          _insertionBox(
+            bigTitle('DISTÂNCIA'),
+            ALTGRANDE,
+            TEXTOGRAN
+          ),
+          // if (pos <= 2)                          // Opção de trifásico somente para 3 primeiras alturas
+          //   _selectionBox(
+          //     bigTitle('É trifásico?'),
+          //     trifasico ? 'Sim' : 'Não',
+          //     ALTGRANDE,
+          //     TEXTOGRAN,
+          //     () => setState(() => trifasico = !trifasico),
+          //     () => setState(() => trifasico = !trifasico)
+          //   ),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -121,8 +127,12 @@ class _HomePageState extends State<HomePage> {
 
   double totalValue() {
     double value = Elevador.valores[pos];
-    if (!trifasico && pos <= 2)
-      value *= 1.0826;
+    // if (!trifasico && pos <= 2)
+    //   value *= 1.0826;
+    double distancia = double.tryParse(_controller.text) ?? 0.0;
+    if (distancia > 100) {
+      value += distancia * 6;
+    }
     value += Elevador.valoresCabines[posCabine];
     for (int i = 0; i < quantias.length; i++) {
       value += (Elevador.valoresAdicionais[i] * quantias[i]);
@@ -135,7 +145,7 @@ class _HomePageState extends State<HomePage> {
       title,
       style: const TextStyle(
         color: Colors.black,
-        fontSize: TAMTITULO,
+        fontSize: TAMTITULO*0.8,
         fontWeight: FontWeight.w900
       ),
     );
@@ -154,36 +164,80 @@ class _HomePageState extends State<HomePage> {
 
   Column _totalValueDisplay(double value) {
     return Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            const Text(
-              'Total',
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        const Text(
+          'TOTAL',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: TAMTITULO,
+            fontWeight: FontWeight.w900
+          ),
+        ),
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: 16.0),
+          decoration: BoxDecoration(
+            color: AZULESCURO,
+            borderRadius: BorderRadius.circular(10.0), // Opcional para cantos arredondados
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              'R\$' + value.toStringAsFixed(2),
               style: TextStyle(
-                color: Colors.black,
-                fontSize: TAMTITULO,
+                color: Colors.white,
+                fontSize: 24,
                 fontWeight: FontWeight.w900
               ),
             ),
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 16.0),
-              decoration: BoxDecoration(
-                color: AZULESCURO,
-                borderRadius: BorderRadius.circular(10.0), // Opcional para cantos arredondados
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  'R\$' + value.toStringAsFixed(2),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900
-                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Padding _insertionBox(Text titulo, double height, double textSize) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          titulo,
+          Container(
+            height: height,
+            margin: EdgeInsets.symmetric(horizontal: 30.0),
+            child: TextField(
+              textAlign: TextAlign.center,
+              controller: _controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: AZULCLARO,
+                contentPadding: EdgeInsets.all(15),
+                hintText: 'Insira a distância ao destino',
+                hintStyle: TextStyle(
+                  color: Color.fromARGB(174, 255, 255, 255),
+                  fontSize: TEXTOGRAN,
+                  fontWeight: FontWeight.w400,
                 ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none
+                )
               ),
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: textSize,
+                fontWeight: FontWeight.w600
+              ),
+              onChanged: (text) {
+                setState(() {});
+              },
             ),
-          ],
-        );
+          ),
+        ],
+      ),
+    );
   }
 
   Padding _selectionBox(Text titulo, String displayText, double height, double textSize, VoidCallback leftTap, VoidCallback rightTap) {
@@ -305,6 +359,16 @@ class _HomePageState extends State<HomePage> {
         );
   }
 
+  void _resetValues() {
+    setState(() {
+      pos = 0;
+      posCabine = 0;
+      trifasico = true;
+      quantias = List.filled(quantias.length, 0);
+      _controller.clear();
+    });
+  }
+
   AppBar appBar() {
     return AppBar(
       backgroundColor: Colors.white,
@@ -330,18 +394,18 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       actions: [
-        GestureDetector(
+        InkWell(
           onTap: () {
-
+            _resetValues();
           },
           child: Container(
           margin: EdgeInsets.all(10),
           alignment: Alignment.center,
           width: 37,
           child: SvgPicture.asset(
-            'assets/icons/x.svg',
-            height: 13,
-            width: 13
+            'assets/icons/circularArrow.svg',
+            height: 20,
+            width: 20
           ),
           decoration: BoxDecoration(
             color: Color(0xffF7F8F8),  // Color not constant, use 0xff...

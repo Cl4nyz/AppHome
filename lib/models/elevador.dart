@@ -41,9 +41,9 @@ class Elevador {
     'Automatização (por porta de pav.)',
     'Sistema de pulso (comando automático)',
     'Barreira infra-vermelho (unidade)',
-    'Modelo cabinado c/ acm escovado, vidro ou chapa',
+    'Cabinado c/ acm escovado, vidro ou chapa',
     'Nobreak',
-    '02 portas com automação',
+    'Porta com automação',
     'Portão de pav. até 1.10x1.50 (unidade)',
     'Guarda corpo até 1.10x1.50 (cada lado)'
   ];
@@ -58,7 +58,7 @@ class Elevador {
     1792.80,
     10943.10,
     3240.00,
-    6355.80,
+    3177.90,
     1944.00,
     1080.00
     ];
