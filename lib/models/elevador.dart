@@ -45,7 +45,8 @@ class Elevador {
     'Nobreak',
     'Porta com automação',
     'Portão de pav. até 1.10x1.50 (unidade)',
-    'Guarda corpo até 1.10x1.50 (cada lado)'
+    'Guarda corpo até 1.10x1.50 (cada lado)',
+    'Aço galvanizado'
   ];
 
   static const List<double> valoresAdicionais = [
@@ -60,6 +61,7 @@ class Elevador {
     3240.00,
     3177.90,
     1944.00,
-    1080.00
+    1080.00,
+    5000.00
     ];
 }
