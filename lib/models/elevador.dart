@@ -8,7 +8,7 @@ class Elevador {
     'até 3,10m',
     'até 3,60m',
     'até 4,00m',
-    'até 4,40m'
+    'até 5,00m'
   ];
 
   static const List<double> valores = [
@@ -45,7 +45,9 @@ class Elevador {
     'Nobreak',
     'Porta com automação',
     'Portão de pav. até 1.10x1.50 (unidade)',
-    'Guarda corpo até 1.10x1.50 (cada lado)'
+    'Guarda corpo até 1.10x1.50 (cada lado)',
+    'Enclausuramento (lado)',
+    'Aço carbono galvanizado'
   ];
 
   static const List<double> valoresAdicionais = [
@@ -60,6 +62,8 @@ class Elevador {
     3240.00,
     3177.90,
     1944.00,
-    1080.00
+    1080.00,
+    7000.00,
+    1.15
     ];
 }

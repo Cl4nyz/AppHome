@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:intl/intl.dart';
 
 import '../models/elevador.dart';
 
@@ -30,7 +31,7 @@ class _HomePageState extends State<HomePage> {
   int pos = 0;
   int posCabine = 0;
   bool trifasico = true;
-  List<int> quantias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  List<int> quantias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   
   TextEditingController _controller = TextEditingController();
   
@@ -58,7 +59,7 @@ class _HomePageState extends State<HomePage> {
             () => setState(() => posCabine = (posCabine + 1) % Elevador.cabines.length)
           ),
           _insertionBox(
-            bigTitle('DISTÂNCIA'),
+            bigTitle('DISTÂNCIA (KM)'),
             ALTGRANDE,
             TEXTOGRAN
           ),
@@ -95,6 +96,13 @@ class _HomePageState extends State<HomePage> {
           ),
           _totalValueDisplay(totalValue()),
           const SizedBox(height: 20,),
+          //TextButton(
+          //  style: ButtonStyle(
+          //    foregroundColor: MaterialStateProperty.all<Color>(Colors.blue),
+          //  ),
+          //  onPressed: () { },
+          //  child: Text('TextButton'),
+         // )
         ]
       )
     );
@@ -129,12 +137,16 @@ class _HomePageState extends State<HomePage> {
     double value = Elevador.valores[pos];
     // if (!trifasico && pos <= 2)
     //   value *= 1.0826;
+    value += Elevador.valoresCabines[posCabine];
+    int posGalvanizado = 13;
+    if (quantias[posGalvanizado] > 0)
+      value *= Elevador.valoresAdicionais[posGalvanizado];
+
     double distancia = double.tryParse(_controller.text) ?? 0.0;
     if (distancia > 100) {
       value += distancia * 6;
     }
-    value += Elevador.valoresCabines[posCabine];
-    for (int i = 0; i < quantias.length; i++) {
+    for (int i = 0; i < quantias.length-1; i++) {
       value += (Elevador.valoresAdicionais[i] * quantias[i]);
     }
     return value;
@@ -183,7 +195,7 @@ class _HomePageState extends State<HomePage> {
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              'R\$' + value.toStringAsFixed(2),
+              'R\$${NumberFormat('#,##0.00', 'pt_BR').format(totalValue())}',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
@@ -214,14 +226,14 @@ class _HomePageState extends State<HomePage> {
                 filled: true,
                 fillColor: AZULCLARO,
                 contentPadding: EdgeInsets.all(15),
-                hintText: 'Insira a distância ao destino',
+                hintText: 'Insira a distância ao destino em km',
                 hintStyle: TextStyle(
                   color: Color.fromARGB(174, 255, 255, 255),
                   fontSize: TEXTOGRAN,
                   fontWeight: FontWeight.w400,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(20),
                   borderSide: BorderSide.none
                 )
               ),
@@ -252,19 +264,28 @@ class _HomePageState extends State<HomePage> {
             margin: EdgeInsets.symmetric(horizontal: 30.0),
             decoration: BoxDecoration(
               color: AZULCLARO,
-              borderRadius: BorderRadius.circular(10.0),
+              borderRadius: BorderRadius.circular(20.0),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                InkWell(
-                  onTap: leftTap,
+                ElevatedButton(
+                  onPressed: leftTap,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 22, 97, 114),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20), 
+                    ),
+                  ),
                   child: Container(
-                    height: TAMSETA,
+                    height: height,
                     width: TAMSETA,
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: SvgPicture.asset('assets/icons/doubleArrowLeft.svg'),
+                      child: SvgPicture.asset(
+                        'assets/icons/doubleArrowLeft.svg',
+                        color: Colors.white
+                        ),
                     ),
                   ),
                 ),
@@ -276,14 +297,23 @@ class _HomePageState extends State<HomePage> {
                     fontWeight: FontWeight.w600
                   ),
                 ),
-                InkWell(
-                  onTap: rightTap,
+                ElevatedButton(
+                  onPressed: rightTap,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 22, 97, 114),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20), 
+                    ),
+                  ),
                   child: Container(
-                    height: TAMSETA,
+                    height: height,
                     width: TAMSETA,
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: SvgPicture.asset('assets/icons/doubleArrowRight.svg'),
+                      child: SvgPicture.asset(
+                      'assets/icons/doubleArrowRight.svg',
+                      color: Colors.white
+                      ),
                     ),
                   ),
                 )
@@ -295,71 +325,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Container _searchField() {
-    return Container(
-          margin: EdgeInsets.only(top:40, left:20, right:20),
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: Color(0xff101617).withOpacity(0.11),
-                blurRadius: 40,
-                spreadRadius: 0.0
-              )
-            ]
-          ),
-          child: TextField(
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: EdgeInsets.all(15),
-              hintText: 'Search Pancake',
-              hintStyle: TextStyle(
-                color: Color(0xffDDDADA),
-                fontSize: 14,
-              ),
-              prefixIcon: Container(
-                height: TAM,
-                width: TAM,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: SvgPicture.asset('assets/icons/search.svg'),
-                ),
-              ),
-              suffixIcon: Container(
-                width: TAM*2,
-                height: TAM,
-                child: IntrinsicHeight(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      VerticalDivider(
-                        color: Colors.black,
-                        indent: 10,
-                        endIndent: 10,
-                        thickness: 0.1,
-                      ),
-                      Container(
-                        width: TAM,
-                        height: TAM,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: SvgPicture.asset('assets/icons/filter.svg'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none
-              )
-            ),
-          ),
-        );
-  }
-
-  void _resetValues() {
+void _resetValues() {
     setState(() {
       pos = 0;
       posCabine = 0;
@@ -377,43 +343,44 @@ class _HomePageState extends State<HomePage> {
         height: 50,
         child: Image.asset('assets/icons/home.png')
         ),
-      leading: GestureDetector(
-        onTap: () {},
-        child: Container(
-          margin: EdgeInsets.all(10),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: Color(0xffF7F8F8),  // Color not constant, use 0xff...
-            borderRadius: BorderRadius.circular(10)
-          ),
-          child: SvgPicture.asset(
-            'assets/icons/left-arrow.svg',
-            height: 20,
-            width: 20
-          ),
-        ),
-      ),
+//      leading: GestureDetector(
+//        onTap: () {},
+//        child: Container(
+//          margin: EdgeInsets.all(10),
+//          alignment: Alignment.center,
+//          decoration: BoxDecoration(
+//            color: Color(0xffF7F8F8),  // Color not constant, use 0xff...
+//            borderRadius: BorderRadius.circular(10)
+//          ),
+//          child: SvgPicture.asset(
+//            'assets/icons/left-arrow.svg',
+//            height: 20,
+//            width: 20
+//          ),
+//        ),
+//      ),
       actions: [
-        InkWell(
-          onTap: () {
+        ElevatedButton(
+          onPressed: () {
             _resetValues();
           },
-          child: Container(
-          margin: EdgeInsets.all(10),
-          alignment: Alignment.center,
-          width: 37,
-          child: SvgPicture.asset(
-            'assets/icons/circularArrow.svg',
-            height: 20,
-            width: 20
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20), 
+            ),
           ),
-          decoration: BoxDecoration(
-            color: Color(0xffF7F8F8),  // Color not constant, use 0xff...
-            borderRadius: BorderRadius.circular(10)
-          )
-        ),
-      )
-    ]
+          child: Container(
+            margin: EdgeInsets.all(3),
+            alignment: Alignment.center,
+            width: 37,
+            child: SvgPicture.asset(
+              'assets/icons/circularArrow.svg',
+              height: 20,
+              width: 20
+            ),
+          ),
+        )
+      ]
     );
   }
 }
