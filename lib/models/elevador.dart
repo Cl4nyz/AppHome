@@ -12,15 +12,15 @@ class Elevador {
   ];
 
   static const List<double> valores = [
-    11969.11,
-    13285.72,
-    13817.52,
+    12958.06,
+    14383.44,
+    14958.81,
     15708.60,
     16021.80,
     16583.40,
     17245.44,
     17934.26,
-    19190.08
+    19416.00
   ];
 
   static const List<String> cabines = [
@@ -30,7 +30,7 @@ class Elevador {
 
   static const List<double> valoresCabines = [
     5184.00,
-    10943.00
+    10943.10
   ];
 
   static const List<String> adicionais = [

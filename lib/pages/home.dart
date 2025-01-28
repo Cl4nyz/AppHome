@@ -226,7 +226,7 @@ class _HomePageState extends State<HomePage> {
                 filled: true,
                 fillColor: AZULCLARO,
                 contentPadding: EdgeInsets.all(15),
-                hintText: 'Insira a distância ao destino em km',
+                hintText: 'Distância em km',
                 hintStyle: TextStyle(
                   color: Color.fromARGB(174, 255, 255, 255),
                   fontSize: TEXTOGRAN,
@@ -279,9 +279,9 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: Container(
                     height: height,
-                    width: TAMSETA,
+                    width: TAMSETA/2,
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(0),
                       child: SvgPicture.asset(
                         'assets/icons/doubleArrowLeft.svg',
                         color: Colors.white
@@ -307,9 +307,9 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: Container(
                     height: height,
-                    width: TAMSETA,
+                    width: TAMSETA/2,
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(0),
                       child: SvgPicture.asset(
                       'assets/icons/doubleArrowRight.svg',
                       color: Colors.white
