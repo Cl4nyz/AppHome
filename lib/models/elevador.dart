@@ -36,8 +36,8 @@ class Elevador {
   static const List<String> adicionais = [
     'Trocar cancela por portão em chapa (unidade)',
     'Rampa de acesso (unidade)',
-    'Porta de pav. em aluminio (unidade)',
-    'Porta de pav. em vidro temperado (unidade)',
+    'Porta de pav. alum. vidro temp.',
+    'Porta de pav. alum. vidro lamin.',
     'Automatização (por porta de pav.)',
     'Sistema de pulso (comando automático)',
     'Barreira infra-vermelho (unidade)',
@@ -47,23 +47,25 @@ class Elevador {
     'Portão de pav. até 1.10x1.50 (unidade)',
     'Guarda corpo até 1.10x1.50 (cada lado)',
     'Enclausuramento (lado)',
+    '3 paradas',
     'Aço carbono galvanizado'
   ];
 
   static const List<double> valoresAdicionais = [
     737.10,
-    540.00,
+    740.00,
     2097.90,
-    2154.60,
-    1080.00,
+    2300.60,
+    1500.00,
     1247.40,
     1792.80,
-    10943.10,
+    12943.10,
     3240.00,
-    3177.90,
+    3250.40,
     1944.00,
     1080.00,
     7000.00,
+    6000.00,
     1.15
     ];
 }
