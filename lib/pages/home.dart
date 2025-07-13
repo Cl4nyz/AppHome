@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'calculadora.dart';
 import 'catalogo.dart';
+import 'configuracoes.dart';
+import '../providers/theme_provider.dart';
 
 const AZULCLARO = Color.fromARGB(255, 32, 143, 167);
 const AZULESCURO = Color.fromARGB(255, 11, 55, 94);
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  final ThemeProvider themeProvider;
+  
+  const HomePage({super.key, required this.themeProvider});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         centerTitle: true,
         title: Container(
           height: 50,
@@ -29,7 +33,6 @@ class HomePage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
-                color: AZULESCURO,
               ),
               textAlign: TextAlign.center,
             ),
@@ -85,10 +88,10 @@ class HomePage extends StatelessWidget {
               'Ajuste as configurações do app',
               Icons.settings,
               () {
-                // TODO: Implementar tela de configurações
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Função em desenvolvimento'),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ConfiguracoesPage(themeProvider: themeProvider),
                   ),
                 );
               },
@@ -112,7 +115,7 @@ class HomePage extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AZULCLARO,
+          color: Theme.of(context).colorScheme.primary,
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
@@ -127,13 +130,13 @@ class HomePage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
                 size: 30,
-                color: AZULESCURO,
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             const SizedBox(width: 20),

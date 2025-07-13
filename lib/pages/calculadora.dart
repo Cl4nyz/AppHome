@@ -32,12 +32,48 @@ class CalculadoraPage extends StatefulWidget {
 }
 
 class _CalculadoraPageState extends State<CalculadoraPage> {
-  int pos = 0;
-  int posCabine = 0;
+  String alturaElevacaoSelecionada = Elevador.alturasKeys.first;
+  String alturaCabineSelecionada = Elevador.cabinesKeys.first;
   bool trifasico = true;
-  List<int> quantias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  Map<String, int> quantiasAdicionais = {};
   
   TextEditingController _controller = TextEditingController();
+  
+  // Controladores para informações do cliente
+  TextEditingController _nomeController = TextEditingController();
+  TextEditingController _cidadeController = TextEditingController();
+  TextEditingController _estadoController = TextEditingController();
+  TextEditingController _observacoesController = TextEditingController();
+  String tipoCliente = 'Residencial';
+  bool _clienteInfoExpanded = false;
+
+  // Controle de seleção de imagens para o PDF
+  Map<String, bool> imagensSelecionadas = {
+    'semicabinada': true,
+    'semicabinadaPortas': true,
+    'semicabinadaEnclausuramento': true,
+    'cabinadaPortas': true,
+  };
+  bool _imagensInfoExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializar quantias dos adicionais
+    for (String adicional in Elevador.adicionaisKeys) {
+      quantiasAdicionais[adicional] = 0;
+    }
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    _nomeController.dispose();
+    _cidadeController.dispose();
+    _estadoController.dispose();
+    _observacoesController.dispose();
+    super.dispose();
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -48,19 +84,19 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
           //_searchField(),
           _selectionBox(
             bigTitle('ALTURA DE ELEVAÇÃO'),
-            Elevador.alturas[pos],
+            alturaElevacaoSelecionada,
             ALTGRANDE,
             TEXTOGRAN,
-            () => setState(() => pos = (pos - 1) % Elevador.alturas.length),
-            () => setState(() => pos = (pos + 1) % Elevador.alturas.length)
+            () => _alterarAlturaElevacao(-1),
+            () => _alterarAlturaElevacao(1)
           ),
           _selectionBox(
             bigTitle('ALTURA CABINE'),
-            Elevador.cabines[posCabine],
+            alturaCabineSelecionada,
             ALTGRANDE,
             TEXTOGRAN,
-            () => setState(() => posCabine = (posCabine - 1) % Elevador.cabines.length),
-            () => setState(() => posCabine = (posCabine + 1) % Elevador.cabines.length)
+            () => _alterarAlturaCabine(-1),
+            () => _alterarAlturaCabine(1)
           ),
           _insertionBox(
             bigTitle('DISTÂNCIA (KM)'),
@@ -80,8 +116,8 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                color: AZULESCURO,
-                child: const Row(
+                color: Theme.of(context).colorScheme.secondary,
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
@@ -100,6 +136,10 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
           ),
           _totalValueDisplay(totalValue()),
           const SizedBox(height: 20),
+          _clienteInfoExpansionTile(),
+          const SizedBox(height: 15),
+          _imagensSelecaoExpansionTile(),
+          const SizedBox(height: 15),
           _gerarPdfButton(),
           const SizedBox(height: 20),
           //TextButton(
@@ -115,6 +155,7 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
   }
 
   Container _scrollableMenu() {
+    List<String> adicionaisKeys = Elevador.adicionaisKeys;
     return Container(
           height: 250,
           color: Color.fromARGB(255, 161, 183, 194),
@@ -123,15 +164,20 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
             child: ListView.separated(
               shrinkWrap: true,
               separatorBuilder: (context, index) => const SizedBox(height: 1.5,),
-              itemCount: quantias.length,
+              itemCount: adicionaisKeys.length,
               itemBuilder: (context, index) {
+                String adicional = adicionaisKeys[index];
                 return _selectionBox(
-                  smallTitle(Elevador.adicionais[index]),
-                  quantias[index].toString(),
+                  smallTitle(adicional),
+                  quantiasAdicionais[adicional].toString(),
                   ALTPEQ,
                   TEXTOPEQ,
-                  () => setState(() { if (quantias[index] > 0) quantias[index]--;}),
-                  () => setState(() => quantias[index]++),
+                  () => setState(() { 
+                    if (quantiasAdicionais[adicional]! > 0) {
+                      quantiasAdicionais[adicional] = quantiasAdicionais[adicional]! - 1;
+                    }
+                  }),
+                  () => setState(() => quantiasAdicionais[adicional] = quantiasAdicionais[adicional]! + 1),
                   );
               },
             ),
@@ -139,22 +185,57 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
         );
   }
 
+  void _alterarAlturaElevacao(int direcao) {
+    List<String> alturas = Elevador.alturasKeys;
+    int currentIndex = alturas.indexOf(alturaElevacaoSelecionada);
+    int newIndex = (currentIndex + direcao) % alturas.length;
+    if (newIndex < 0) newIndex = alturas.length - 1;
+    setState(() {
+      alturaElevacaoSelecionada = alturas[newIndex];
+    });
+  }
+
+  void _alterarAlturaCabine(int direcao) {
+    List<String> cabines = Elevador.cabinesKeys;
+    int currentIndex = cabines.indexOf(alturaCabineSelecionada);
+    int newIndex = (currentIndex + direcao) % cabines.length;
+    if (newIndex < 0) newIndex = cabines.length - 1;
+    setState(() {
+      alturaCabineSelecionada = cabines[newIndex];
+    });
+  }
+
   double totalValue() {
-    double value = Elevador.valores[pos];
-    // if (!trifasico && pos <= 2)
-    //   value *= 1.0826;
-    value += Elevador.valoresCabines[posCabine];
-    if (quantias[POSGALVANIZADO] > 0)
-      value *= Elevador.valoresAdicionais[POSGALVANIZADO];
+    double value = Elevador.alturas[alturaElevacaoSelecionada] ?? 0;
+    value += Elevador.cabines[alturaCabineSelecionada] ?? 0;
+    
+    // Verificar se tem galvanizado
+    String galvanizado = 'Aço carbono galvanizado';
+    if (quantiasAdicionais[galvanizado] != null && quantiasAdicionais[galvanizado]! > 0) {
+      value *= Elevador.adicionais[galvanizado] ?? 1;
+    }
 
     double distancia = double.tryParse(_controller.text) ?? 0.0;
     if (distancia > 100) {
       value += distancia * 6;
     }
-    for (int i = 0; i < quantias.length-1; i++) {
-      value += (Elevador.valoresAdicionais[i] * quantias[i]);
-    }
+    
+    // Somar valores dos adicionais (exceto galvanizado)
+    quantiasAdicionais.forEach((adicional, quantidade) {
+      if (adicional != galvanizado && quantidade > 0) {
+        value += (Elevador.adicionais[adicional] ?? 0) * quantidade;
+      }
+    });
+    
     return value;
+  }
+
+  double calcularFrete() {
+    double distancia = double.tryParse(_controller.text) ?? 0.0;
+    if (distancia > 100) {
+      return distancia * 6;
+    }
+    return 0;
   }
 
   Text bigTitle(String title) {
@@ -183,10 +264,10 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'TOTAL',
           style: TextStyle(
-            color: Colors.black,
+            color: Theme.of(context).textTheme.titleLarge?.color,
             fontSize: TAMTITULO,
             fontWeight: FontWeight.w900
           ),
@@ -194,7 +275,7 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
         Container(
           margin: EdgeInsets.symmetric(horizontal: 16.0),
           decoration: BoxDecoration(
-            color: AZULESCURO,
+            color: Theme.of(context).colorScheme.secondary,
             borderRadius: BorderRadius.circular(10.0), // Opcional para cantos arredondados
           ),
           child: Padding(
@@ -332,11 +413,23 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
 
 void _resetValues() {
     setState(() {
-      pos = 0;
-      posCabine = 0;
+      alturaElevacaoSelecionada = Elevador.alturasKeys.first;
+      alturaCabineSelecionada = Elevador.cabinesKeys.first;
       trifasico = true;
-      quantias = List.filled(quantias.length, 0);
+      quantiasAdicionais.updateAll((key, value) => 0);
       _controller.clear();
+      
+      // Limpar campos de informações do cliente
+      _nomeController.clear();
+      _cidadeController.clear();
+      _estadoController.clear();
+      _observacoesController.clear();
+      tipoCliente = 'Residencial';
+      _clienteInfoExpanded = false;
+      
+      // Reset das imagens selecionadas
+      imagensSelecionadas.updateAll((key, value) => true);
+      _imagensInfoExpanded = false;
     });
   }
 
@@ -349,7 +442,7 @@ void _resetValues() {
           await _gerarPDF();
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: AZULESCURO,
+          backgroundColor: Theme.of(context).colorScheme.secondary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 15),
           shape: RoundedRectangleBorder(
@@ -379,10 +472,19 @@ void _resetValues() {
     try {
       
       final pdfBytes = await PDFGenerator.generateOrcamentoPDF(
-        alturaElevacao: Elevador.alturas[pos],
+        cidade: _cidadeController.text.isEmpty ? '-' : _cidadeController.text,
+        estado: _estadoController.text.isEmpty ? '-' : _estadoController.text,
+        cliente: _nomeController.text.isEmpty ? '-' : _nomeController.text,
+        tipoCliente: tipoCliente,
+        alturaElevacao: alturaElevacaoSelecionada,
         preco: totalValue(),
-        alturaCabine: Elevador.cabines[posCabine],
+        alturaCabine: alturaCabineSelecionada,
         adicionais: _gerarAdicionaisMap(),
+        frete: calcularFrete().toInt(),
+        galvanizado: quantiasAdicionais['Aço carbono galvanizado'] != null && quantiasAdicionais['Aço carbono galvanizado']! > 0
+            ? true
+            : false,
+        imagensSelecionadas: imagensSelecionadas,
       );
 
       // Mostrar pré-visualização
@@ -410,22 +512,343 @@ void _resetValues() {
   // Função para gerar lista de adicionais selecionados
   List<Map<String, dynamic>> _gerarAdicionaisMap() {
     List<Map<String, dynamic>> adicionais = [];
-    for (int i = 0; i < quantias.length; i++) {
-      if (i == POSGALVANIZADO) continue;
-      if (quantias[i] > 0) {
+    quantiasAdicionais.forEach((adicional, quantidade) {
+      if (adicional != 'Aço carbono galvanizado' && quantidade > 0) {
         adicionais.add({
-          'descricao': Elevador.adicionais[i],
-          'quantidade': quantias[i],
-          'valor': Elevador.valoresAdicionais[i] * quantias[i],
+          'descricao': adicional,
+          'quantidade': quantidade,
+          'valor': (Elevador.adicionais[adicional] ?? 0) * quantidade,
         });
       }
-    }
+    });
     return adicionais;
+  }
+
+  // Widget para aba expansível de informações do cliente
+  Widget _clienteInfoExpansionTile() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AZULCLARO, width: 2),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _clienteInfoExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _clienteInfoExpanded = expanded;
+            });
+          },
+          leading: const Icon(
+            Icons.person,
+            color: AZULESCURO,
+            size: 24,
+          ),
+          title: Text(
+            'INFORMAÇÕES DO CLIENTE',
+            style: TextStyle(
+              color: AZULESCURO,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // Campo Nome do Cliente
+                  _buildClienteTextField(
+                    controller: _nomeController,
+                    label: 'Nome do Cliente',
+                    hint: 'Digite o nome do cliente',
+                    icon: Icons.person_outline,
+                  ),
+                  const SizedBox(height: 15),
+                  
+                  // Linha com Cidade e Estado
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: _buildClienteTextField(
+                          controller: _cidadeController,
+                          label: 'Cidade',
+                          hint: 'Digite a cidade',
+                          icon: Icons.location_city,
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        flex: 1,
+                        child: _buildClienteTextField(
+                          controller: _estadoController,
+                          label: 'Estado',
+                          hint: 'UF',
+                          icon: Icons.map,
+                          maxLength: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  
+                  // Seleção de Tipo de Cliente
+                  _buildTipoClienteSelector(),
+                  const SizedBox(height: 15),
+                  
+                  // Campo de Observações
+                  _buildClienteTextField(
+                    controller: _observacoesController,
+                    label: 'Observações Adicionais',
+                    hint: 'Informações extras sobre o projeto...',
+                    icon: Icons.note,
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget para campos de texto do cliente
+  Widget _buildClienteTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    int maxLines = 1,
+    int? maxLength,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AZULESCURO,
+          ),
+        ),
+        const SizedBox(height: 5),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          maxLength: maxLength,
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: Icon(icon, color: AZULCLARO, size: 20),
+            filled: true,
+            fillColor: Colors.grey[50],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AZULCLARO, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AZULESCURO, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+            counterText: '', // Remove contador de caracteres
+          ),
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget para seleção do tipo de cliente
+  Widget _buildTipoClienteSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Tipo de Cliente',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AZULESCURO,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: AZULCLARO, width: 1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: RadioListTile<String>(
+                  title: const Text(
+                    'Residencial',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  value: 'Residencial',
+                  groupValue: tipoCliente,
+                  activeColor: AZULESCURO,
+                  onChanged: (value) {
+                    setState(() {
+                      tipoCliente = value!;
+                    });
+                  },
+                ),
+              ),
+              Expanded(
+                child: RadioListTile<String>(
+                  title: const Text(
+                    'Comercial',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  value: 'Comercial',
+                  groupValue: tipoCliente,
+                  activeColor: AZULESCURO,
+                  onChanged: (value) {
+                    setState(() {
+                      tipoCliente = value!;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget para aba expansível de seleção de imagens
+  Widget _imagensSelecaoExpansionTile() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AZULCLARO, width: 2),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _imagensInfoExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _imagensInfoExpanded = expanded;
+            });
+          },
+          leading: const Icon(
+            Icons.image,
+            color: AZULESCURO,
+            size: 24,
+          ),
+          title: Text(
+            'SELEÇÃO DE IMAGENS PARA PDF',
+            style: TextStyle(
+              color: AZULESCURO,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Selecione as imagens que aparecerão no PDF:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AZULESCURO,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...imagensSelecionadas.keys.map((nomeImagem) {
+                    // Mapa para converter chaves técnicas em nomes legíveis
+                    Map<String, String> nomesLisiveis = {
+                      'semicabinada': 'Semicabinada',
+                      'semicabinadaPortas': 'Semicabinada com Portas',
+                      'semicabinadaEnclausuramento': 'Semicabinada Enclausurada',
+                      'cabinadaPortas': 'Cabinada com Portas',
+                    };
+                    
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AZULCLARO.withOpacity(0.3), width: 1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: CheckboxListTile(
+                        title: Text(
+                          nomesLisiveis[nomeImagem] ?? nomeImagem,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        value: imagensSelecionadas[nomeImagem],
+                        activeColor: AZULESCURO,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            imagensSelecionadas[nomeImagem] = value ?? false;
+                          });
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                      ),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AZULCLARO.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AZULCLARO.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: AZULESCURO,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'As imagens selecionadas serão organizadas automaticamente no PDF, preenchendo as posições disponíveis.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AZULESCURO,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   AppBar appBar() {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       centerTitle: true,
       title: Container(
         height: 50,
@@ -444,7 +867,7 @@ void _resetValues() {
           ),
           child: Icon(
             Icons.arrow_back,
-            color: AZULESCURO,
+            color: Theme.of(context).colorScheme.secondary,
             size: 20
           ),
         ),

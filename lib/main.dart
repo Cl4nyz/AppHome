@@ -1,20 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:home_elevadores/pages/home.dart';
+import 'providers/theme_provider.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final ThemeProvider _themeProvider = ThemeProvider();
+
+  @override
+  void initState() {
+    super.initState();
+    _themeProvider.addListener(_themeChanged);
+  }
+
+  @override
+  void dispose() {
+    _themeProvider.removeListener(_themeChanged);
+    super.dispose();
+  }
+
+  void _themeChanged() {
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'Roboto'),
-      home: const HomePage()
+      theme: _themeProvider.currentTheme.copyWith(
+        textTheme: _themeProvider.currentTheme.textTheme.apply(
+          fontFamily: 'Roboto',
+        ),
+      ),
+      home: HomePage(themeProvider: _themeProvider),
     );
   }
 }
