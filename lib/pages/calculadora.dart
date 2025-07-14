@@ -12,9 +12,8 @@ import 'package:pdf/pdf.dart';
 
 import '../models/elevador.dart';
 import '../services/pdf_generator.dart';
+import '../constants/app_constants.dart';
 
-const AZULCLARO = Color.fromARGB(255, 32, 143, 167);
-const AZULESCURO = Color.fromARGB(255, 11, 55, 94);
 const TAM = 30.0;
 const TAMTITULO = 25.0;
 const TAMSETA = 45.0;
@@ -44,7 +43,7 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
   TextEditingController _cidadeController = TextEditingController();
   TextEditingController _estadoController = TextEditingController();
   TextEditingController _observacoesController = TextEditingController();
-  String tipoCliente = 'Residencial';
+  String tipoCliente = '';
   bool _clienteInfoExpanded = false;
 
   // Controle de seleção de imagens para o PDF
@@ -276,7 +275,7 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
           margin: EdgeInsets.symmetric(horizontal: 16.0),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.secondary,
-            borderRadius: BorderRadius.circular(10.0), // Opcional para cantos arredondados
+            borderRadius: BorderRadius.circular(Dimensions.borderRadius), // Usar constante centralizada
           ),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -310,7 +309,7 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: AZULCLARO,
+                fillColor: AZUL_CLARO, // Usar constante centralizada
                 contentPadding: EdgeInsets.all(15),
                 hintText: 'Distância em km',
                 hintStyle: TextStyle(
@@ -349,7 +348,7 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
             height: height,
             margin: EdgeInsets.symmetric(horizontal: 30.0),
             decoration: BoxDecoration(
-              color: AZULCLARO,
+              color: AZUL_CLARO, // Usar constante centralizada
               borderRadius: BorderRadius.circular(20.0),
             ),
             child: Row(
@@ -424,7 +423,7 @@ void _resetValues() {
       _cidadeController.clear();
       _estadoController.clear();
       _observacoesController.clear();
-      tipoCliente = 'Residencial';
+      tipoCliente = '';
       _clienteInfoExpanded = false;
       
       // Reset das imagens selecionadas
@@ -446,7 +445,7 @@ void _resetValues() {
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 15),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(Dimensions.borderRadius), // Usar constante centralizada
           ),
         ),
         child: const Row(
@@ -472,10 +471,11 @@ void _resetValues() {
     try {
       
       final pdfBytes = await PDFGenerator.generateOrcamentoPDF(
-        cidade: _cidadeController.text.isEmpty ? '-' : _cidadeController.text,
-        estado: _estadoController.text.isEmpty ? '-' : _estadoController.text,
-        cliente: _nomeController.text.isEmpty ? '-' : _nomeController.text,
+        cidade: _cidadeController.text.isEmpty ? '' : _cidadeController.text,
+        estado: _estadoController.text.isEmpty ? '' : _estadoController.text,
+        cliente: _nomeController.text.isEmpty ? '' : _nomeController.text,
         tipoCliente: tipoCliente,
+        observacao: _observacoesController.text,
         alturaElevacao: alturaElevacaoSelecionada,
         preco: totalValue(),
         alturaCabine: alturaCabineSelecionada,
@@ -496,7 +496,7 @@ void _resetValues() {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('PDF gerado com sucesso!'),
-          backgroundColor: AZULCLARO,
+          backgroundColor: AZUL_CLARO, // Usar constante centralizada
         ),
       );
     } catch (e) {
@@ -530,8 +530,8 @@ void _resetValues() {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AZULCLARO, width: 2),
+        borderRadius: BorderRadius.circular(Dimensions.borderRadius), // Usar constante centralizada
+        border: Border.all(color: AZUL_CLARO, width: 2), // Usar constante centralizada
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -544,20 +544,20 @@ void _resetValues() {
           },
           leading: const Icon(
             Icons.person,
-            color: AZULESCURO,
+            color: AZUL_ESCURO, // Usar constante centralizada
             size: 24,
           ),
           title: Text(
             'INFORMAÇÕES DO CLIENTE',
             style: TextStyle(
-              color: AZULESCURO,
+              color: AZUL_ESCURO, // Usar constante centralizada
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(Dimensions.padding), // Usar constante centralizada
               child: Column(
                 children: [
                   // Campo Nome do Cliente
@@ -634,7 +634,7 @@ void _resetValues() {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AZULESCURO,
+            color: AZUL_ESCURO, // Usar constante centralizada
           ),
         ),
         const SizedBox(height: 5),
@@ -644,16 +644,16 @@ void _resetValues() {
           maxLength: maxLength,
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(icon, color: AZULCLARO, size: 20),
+            prefixIcon: Icon(icon, color: AZUL_CLARO, size: 20), // Usar constante centralizada
             filled: true,
             fillColor: Colors.grey[50],
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AZULCLARO, width: 1),
+              borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall), // Usar constante centralizada
+              borderSide: BorderSide(color: AZUL_CLARO, width: 1), // Usar constante centralizada
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AZULESCURO, width: 2),
+              borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall), // Usar constante centralizada
+              borderSide: BorderSide(color: AZUL_ESCURO, width: 2), // Usar constante centralizada
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
             counterText: '', // Remove contador de caracteres
@@ -677,48 +677,66 @@ void _resetValues() {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AZULESCURO,
+            color: AZUL_ESCURO, // Usar constante centralizada
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: Dimensions.paddingSmall), // Usar constante centralizada
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: AZULCLARO, width: 1),
-            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AZUL_CLARO, width: 1), // Usar constante centralizada
+            borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall), // Usar constante centralizada
           ),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: RadioListTile<String>(
-                  title: const Text(
-                    'Residencial',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  value: 'Residencial',
-                  groupValue: tipoCliente,
-                  activeColor: AZULESCURO,
-                  onChanged: (value) {
-                    setState(() {
-                      tipoCliente = value!;
-                    });
-                  },
+              RadioListTile<String>(
+                title: const Text(
+                  'Nenhum',
+                  style: TextStyle(fontSize: 14),
                 ),
+                value: '',
+                groupValue: tipoCliente,
+                activeColor: AZUL_ESCURO, // Usar constante centralizada
+                onChanged: (value) {
+                  setState(() {
+                    tipoCliente = value!;
+                  });
+                },
               ),
-              Expanded(
-                child: RadioListTile<String>(
-                  title: const Text(
-                    'Comercial',
-                    style: TextStyle(fontSize: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text(
+                        'Residencial',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      value: 'Residencial',
+                      groupValue: tipoCliente,
+                      activeColor: AZUL_ESCURO, // Usar constante centralizada
+                      onChanged: (value) {
+                        setState(() {
+                          tipoCliente = value!;
+                        });
+                      },
+                    ),
                   ),
-                  value: 'Comercial',
-                  groupValue: tipoCliente,
-                  activeColor: AZULESCURO,
-                  onChanged: (value) {
-                    setState(() {
-                      tipoCliente = value!;
-                    });
-                  },
-                ),
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text(
+                        'Comercial',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      value: 'Comercial',
+                      groupValue: tipoCliente,
+                      activeColor: AZUL_ESCURO, // Usar constante centralizada
+                      onChanged: (value) {
+                        setState(() {
+                          tipoCliente = value!;
+                        });
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -733,8 +751,8 @@ void _resetValues() {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AZULCLARO, width: 2),
+        borderRadius: BorderRadius.circular(Dimensions.borderRadius), // Usar constante centralizada
+        border: Border.all(color: AZUL_CLARO, width: 2), // Usar constante centralizada
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -747,20 +765,20 @@ void _resetValues() {
           },
           leading: const Icon(
             Icons.image,
-            color: AZULESCURO,
+            color: AZUL_ESCURO, // Usar constante centralizada
             size: 24,
           ),
           title: Text(
             'SELEÇÃO DE IMAGENS PARA PDF',
             style: TextStyle(
-              color: AZULESCURO,
+              color: AZUL_ESCURO, // Usar constante centralizada
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(Dimensions.padding), // Usar constante centralizada
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -769,10 +787,10 @@ void _resetValues() {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AZULESCURO,
+                      color: AZUL_ESCURO, // Usar constante centralizada
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: Dimensions.spacingSmall), // Usar constante centralizada
                   ...imagensSelecionadas.keys.map((nomeImagem) {
                     // Mapa para converter chaves técnicas em nomes legíveis
                     Map<String, String> nomesLisiveis = {
@@ -783,10 +801,10 @@ void _resetValues() {
                     };
                     
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
+                      margin: EdgeInsets.only(bottom: Dimensions.paddingSmall), // Usar constante centralizada
                       decoration: BoxDecoration(
-                        border: Border.all(color: AZULCLARO.withOpacity(0.3), width: 1),
-                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AZUL_CLARO.withOpacity(0.3), width: 1), // Usar constante centralizada
+                        borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall), // Usar constante centralizada
                       ),
                       child: CheckboxListTile(
                         title: Text(
@@ -797,7 +815,7 @@ void _resetValues() {
                           ),
                         ),
                         value: imagensSelecionadas[nomeImagem],
-                        activeColor: AZULESCURO,
+                        activeColor: AZUL_ESCURO, // Usar constante centralizada
                         onChanged: (bool? value) {
                           setState(() {
                             imagensSelecionadas[nomeImagem] = value ?? false;
@@ -808,28 +826,28 @@ void _resetValues() {
                       ),
                     );
                   }).toList(),
-                  const SizedBox(height: 10),
+                  SizedBox(height: Dimensions.spacingSmall), // Usar constante centralizada
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(Dimensions.paddingSmall * 1.5), // Usar constante centralizada
                     decoration: BoxDecoration(
-                      color: AZULCLARO.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AZULCLARO.withOpacity(0.3)),
+                      color: AZUL_CLARO.withOpacity(0.1), // Usar constante centralizada
+                      borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall), // Usar constante centralizada
+                      border: Border.all(color: AZUL_CLARO.withOpacity(0.3)), // Usar constante centralizada
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: AZULESCURO,
+                          color: AZUL_ESCURO, // Usar constante centralizada
                           size: 18,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: Dimensions.paddingSmall), // Usar constante centralizada
                         Expanded(
                           child: Text(
                             'As imagens selecionadas serão organizadas automaticamente no PDF, preenchendo as posições disponíveis.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AZULESCURO,
+                              color: AZUL_ESCURO, // Usar constante centralizada
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -859,11 +877,11 @@ void _resetValues() {
           Navigator.pop(context);
         },
         child: Container(
-          margin: EdgeInsets.all(10),
+          margin: EdgeInsets.all(Dimensions.spacingSmall), // Usar constante centralizada
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: Color(0xffF7F8F8),
-            borderRadius: BorderRadius.circular(10)
+            borderRadius: BorderRadius.circular(Dimensions.borderRadius) // Usar constante centralizada
           ),
           child: Icon(
             Icons.arrow_back,

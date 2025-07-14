@@ -4,9 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
 import '../models/elevador.dart';
-
-const CLARO = 0xFF208FA7;
-const ESCURO = 0xFF0B375E;
+import '../constants/app_constants.dart';
 
 class PDFGenerator {
   // Função para criar cabeçalho padronizado
@@ -46,7 +44,7 @@ class PDFGenerator {
               style: pw.TextStyle(
                 fontSize: 14,
                 fontWeight: pw.FontWeight.bold,
-                color: const PdfColor.fromInt(ESCURO),
+                color: const PdfColor.fromInt(PDF_ESCURO),
                 font: ttf,
               ),
             ),
@@ -54,7 +52,7 @@ class PDFGenerator {
               'contato@homelevadores.com',
               style: pw.TextStyle(
                 fontSize: 11,
-                color: const PdfColor.fromInt(ESCURO),
+                color: const PdfColor.fromInt(PDF_ESCURO),
                 font: ttf,
               ),
             ),
@@ -126,10 +124,11 @@ class PDFGenerator {
   }
 
   static Future<Uint8List> generateOrcamentoPDF({
-    String cidade = '-',
-    String estado = '-',
-    String cliente = '-',
+    String cidade = '',
+    String estado = '',
+    String cliente = '',
     String tipoCliente = '',
+    String observacao = '',
     bool galvanizado = false,
     int frete = 0,
     required String alturaElevacao,
@@ -200,10 +199,10 @@ class PDFGenerator {
               pw.SizedBox(height: 10),
               
               pw.Container(
-                color: const PdfColor.fromInt(ESCURO),
+                color: const PdfColor.fromInt(PDF_ESCURO),
                 padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 child: pw.Text(
-                  'COTAÇÃO $tipoCliente',
+                  'COTAÇÃO ${tipoCliente.toUpperCase()}',
                   style: pw.TextStyle(
                   fontSize: 18,
                   fontWeight: pw.FontWeight.bold,
@@ -213,21 +212,49 @@ class PDFGenerator {
                 ),
               ),
 
-              pw.SizedBox(height: 10),
+              pw.SizedBox(height: 5),
 
               pw.Text(
                 'DATA: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}\n'
-                'CIDADE: $cidade, $estado\n'
-                'CLIENTE: $cliente\n'
                 'REFERÊNCIA: Plataforma ${alturaCabine.contains('2,10') ? 'cabinada' : 'semicabinada'}',
                 style: pw.TextStyle(
                   fontSize: 12,
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   font: ttf,
                 ),
               ),
+
+              if (cidade.trim().isNotEmpty || estado.trim().isNotEmpty)
+                pw.Text(
+                  'CIDADE: $cidade, $estado',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    font: ttf,
+                    color: const PdfColor.fromInt(PDF_ESCURO),
+                  ),
+                ),
+
+              if (cliente.trim().isNotEmpty)
+                pw.Text(
+                  'CLIENTE: $cliente',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    font: ttf,
+                    color: const PdfColor.fromInt(PDF_ESCURO),
+                  ),
+                ),
+
+              if (observacao.trim().isNotEmpty)
+                pw.Text(
+                  'OBSERVAÇÃO: $observacao',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    font: ttf,
+                    color: const PdfColor.fromInt(PDF_ESCURO),
+                  ),
+                ),
               
-              pw.SizedBox(height: 30),
+              pw.SizedBox(height: 20),
               
               pw.Table(
                 columnWidths: {
@@ -236,7 +263,7 @@ class PDFGenerator {
                   2: pw.FlexColumnWidth(1), // 20%
                 },
                 border: pw.TableBorder.all(
-                  color: const PdfColor.fromInt(CLARO),
+                  color: const PdfColor.fromInt(PDF_CLARO),
                   width: 1,
                 ),
                 children: [
@@ -253,7 +280,7 @@ class PDFGenerator {
                         style: pw.TextStyle(
                         fontSize: 12,
                         fontWeight: pw.FontWeight.bold,
-                        color: const PdfColor.fromInt(ESCURO),
+                        color: const PdfColor.fromInt(PDF_ESCURO),
                         letterSpacing: 1,
                         font: ttf,
                         ),
@@ -268,7 +295,7 @@ class PDFGenerator {
                         style: pw.TextStyle(
                         fontSize: 12,
                         fontWeight: pw.FontWeight.bold,
-                        color: const PdfColor.fromInt(ESCURO),
+                        color: const PdfColor.fromInt(PDF_ESCURO),
                         letterSpacing: 1,
                         font: ttf,
                         ),
@@ -283,7 +310,7 @@ class PDFGenerator {
                         style: pw.TextStyle(
                         fontSize: 12,
                         fontWeight: pw.FontWeight.bold,
-                        color: const PdfColor.fromInt(ESCURO),
+                        color: const PdfColor.fromInt(PDF_ESCURO),
                         letterSpacing: 1,
                         font: ttf,
                         ),
@@ -421,40 +448,50 @@ class PDFGenerator {
                   ),
                 ],
               ),
-              pw.SizedBox(height: 20),
+              //pw.SizedBox(height: 20),
 
               // Valor total
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(20),
-                decoration: pw.BoxDecoration(
-                  color: const PdfColor.fromInt(0xFF0B375E),
-                  borderRadius: pw.BorderRadius.circular(10),
-                ),
-                child: pw.Column(
-                  children: [
+                pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Container(
+                  width: 240,
+                  height: 25,
+                  padding: const pw.EdgeInsets.all(20),
+                  decoration: const pw.BoxDecoration(
+                    color: PdfColor.fromInt(0xFF0B375E),
+                    //borderRadius: pw.BorderRadius.circular(10),
+                  ),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.start,
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.SizedBox(width: 20),
                     pw.Text(
-                      'VALOR TOTAL',
+                      'TOTAL',
                       style: pw.TextStyle(
-                        fontSize: 16,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.white,
-                        font: ttf,
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                      font: ttf,
                       ),
                     ),
-                    pw.SizedBox(height: 10),
+                    pw.SizedBox(width: 52),
                     pw.Text(
                       currencyFormatter.format(preco),
                       style: pw.TextStyle(
-                        fontSize: 24,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.white,
-                        font: ttf,
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                      font: ttf,
                       ),
                     ),
-                  ],
+                    ],
+                  ),
+                  ),
+                ],
                 ),
-              ),
               
               pw.SizedBox(height: 30),
               
@@ -463,7 +500,7 @@ class PDFGenerator {
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   font: ttf,
                 ),
               ),
@@ -484,7 +521,7 @@ class PDFGenerator {
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   font: ttf,
                 ),
               ),
@@ -529,7 +566,7 @@ class PDFGenerator {
               pw.SizedBox(height: 10),
 
               pw.Container(
-                color: const PdfColor.fromInt(ESCURO),
+                color: const PdfColor.fromInt(PDF_ESCURO),
                 padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 child: pw.Text(
                   'ESPECIFICAÇÕES TÉCNICAS',
@@ -566,7 +603,7 @@ class PDFGenerator {
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   font: ttf,
                 ),
                 ),
@@ -586,7 +623,7 @@ class PDFGenerator {
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   font: ttf,
                 ),
                 ),
@@ -607,7 +644,7 @@ class PDFGenerator {
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   font: ttf,
                 ),
                 ),
@@ -627,7 +664,7 @@ class PDFGenerator {
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   font: ttf,
                 ),
                 ),
@@ -647,7 +684,7 @@ class PDFGenerator {
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   font: ttf,
                 ),
                 ),
@@ -692,7 +729,7 @@ class PDFGenerator {
               pw.SizedBox(height: 10),
 
               pw.Container(
-                color: const PdfColor.fromInt(ESCURO),
+                color: const PdfColor.fromInt(PDF_ESCURO),
                 padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 child: pw.Text(
                   'CONDIÇÕES GERAIS DE FORNECIMENTO',
@@ -712,7 +749,7 @@ class PDFGenerator {
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   font: ttf,
                 ),
                 ),
@@ -738,7 +775,7 @@ class PDFGenerator {
                 style: pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   font: ttf,
                 ),
                 ),
@@ -754,7 +791,7 @@ class PDFGenerator {
               pw.SizedBox(height: 20),
 
               pw.Container(
-                color: const PdfColor.fromInt(ESCURO),
+                color: const PdfColor.fromInt(PDF_ESCURO),
                 padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 child: pw.Text(
                   'GARANTIA',
@@ -780,7 +817,7 @@ class PDFGenerator {
               pw.SizedBox(height: 20),
 
               pw.Container(
-                color: const PdfColor.fromInt(ESCURO),
+                color: const PdfColor.fromInt(PDF_ESCURO),
                 padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 child: pw.Text(
                   'TERMOS E CONDIÇÕES',
@@ -807,7 +844,7 @@ class PDFGenerator {
               pw.SizedBox(height: 20),
 
               pw.Container(
-                color: const PdfColor.fromInt(ESCURO),
+                color: const PdfColor.fromInt(PDF_ESCURO),
                 padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 child: pw.Text(
                   'NORMAS DE REFERÊNCIA',
@@ -875,7 +912,7 @@ class PDFGenerator {
 
                 // Título da página
                 pw.Container(
-                  color: const PdfColor.fromInt(ESCURO),
+                  color: const PdfColor.fromInt(PDF_ESCURO),
                   padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: pw.Text(
                     'MODELOS DE PLATAFORMAS',
@@ -895,7 +932,7 @@ class PDFGenerator {
                   style: pw.TextStyle(
                     fontSize: 14,
                     fontWeight: pw.FontWeight.bold,
-                    color: const PdfColor.fromInt(ESCURO),
+                    color: const PdfColor.fromInt(PDF_ESCURO),
                     font: ttf,
                   ),
                 ),
@@ -926,7 +963,7 @@ class PDFGenerator {
                                 child: pw.Column(
                                   children: [
                                     pw.Container(
-                                      color: const PdfColor.fromInt(ESCURO),
+                                      color: const PdfColor.fromInt(PDF_ESCURO),
                                       padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                       child: pw.Text(
                                         imagensOrganizadas[0]['titulo'],
@@ -956,7 +993,7 @@ class PDFGenerator {
                                   ? pw.Column(
                                       children: [
                                         pw.Container(
-                                          color: const PdfColor.fromInt(ESCURO),
+                                          color: const PdfColor.fromInt(PDF_ESCURO),
                                           padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                           child: pw.Text(
                                             imagensOrganizadas[1]['titulo'],
@@ -995,7 +1032,7 @@ class PDFGenerator {
                                 child: pw.Column(
                                   children: [
                                     pw.Container(
-                                      color: const PdfColor.fromInt(ESCURO),
+                                      color: const PdfColor.fromInt(PDF_ESCURO),
                                       padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                       child: pw.Text(
                                         imagensOrganizadas[2]['titulo'],
@@ -1025,7 +1062,7 @@ class PDFGenerator {
                                   ? pw.Column(
                                       children: [
                                         pw.Container(
-                                          color: const PdfColor.fromInt(ESCURO),
+                                          color: const PdfColor.fromInt(PDF_ESCURO),
                                           padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                           child: pw.Text(
                                             imagensOrganizadas[3]['titulo'],

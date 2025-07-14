@@ -3,9 +3,7 @@ import 'calculadora.dart';
 import 'catalogo.dart';
 import 'configuracoes.dart';
 import '../providers/theme_provider.dart';
-
-const AZULCLARO = Color.fromARGB(255, 32, 143, 167);
-const AZULESCURO = Color.fromARGB(255, 11, 55, 94);
+import '../constants/app_constants.dart';
 
 class HomePage extends StatelessWidget {
   final ThemeProvider themeProvider;
@@ -24,19 +22,19 @@ class HomePage extends StatelessWidget {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(Dimensions.spacing),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
+            Text(
               'SELECIONE UMA FUNÇÃO',
               style: TextStyle(
-                fontSize: 28,
+                fontSize: FontSizes.display,
                 fontWeight: FontWeight.w900,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: Dimensions.spacing * 2),
             _buildFunctionCard(
               context,
               'CALCULADORA',
@@ -51,7 +49,7 @@ class HomePage extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: Dimensions.spacing),
             _buildFunctionCard(
               context,
               'CATÁLOGO',
@@ -66,7 +64,7 @@ class HomePage extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: Dimensions.spacing),
             _buildFunctionCard(
               context,
               'ORÇAMENTOS',
@@ -81,7 +79,7 @@ class HomePage extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: Dimensions.spacing),
             _buildFunctionCard(
               context,
               'CONFIGURAÇÕES',
@@ -113,10 +111,10 @@ class HomePage extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(Dimensions.spacing),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.primary,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(Dimensions.borderRadius + 5),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -128,10 +126,10 @@ class HomePage extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(15),
+              padding: EdgeInsets.all(Dimensions.borderRadius + 5),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(Dimensions.borderRadius),
               ),
               child: Icon(
                 icon,
@@ -139,24 +137,24 @@ class HomePage extends StatelessWidget {
                 color: Theme.of(context).colorScheme.secondary,
               ),
             ),
-            const SizedBox(width: 20),
+            SizedBox(width: Dimensions.spacing),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 20,
+                    style: TextStyle(
+                      fontSize: FontSizes.title,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 5),
+                  SizedBox(height: Dimensions.paddingSmall / 2),
                   Text(
                     description,
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: FontSizes.medium,
                       color: Colors.white70,
                     ),
                   ),

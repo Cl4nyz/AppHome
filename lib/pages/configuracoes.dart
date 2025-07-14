@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../providers/theme_provider.dart';
-
-const AZULCLARO = Color.fromARGB(255, 32, 143, 167);
-const AZULESCURO = Color.fromARGB(255, 11, 55, 94);
+import '../constants/app_constants.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   final ThemeProvider themeProvider;
@@ -14,6 +12,14 @@ class ConfiguracoesPage extends StatefulWidget {
 }
 
 class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
+  FontScale _fontScaleSelecionada = FontScale.normal;
+
+  @override
+  void initState() {
+    super.initState();
+    // Aplicar a escala de fonte salva (seria melhor usar SharedPreferences em uma implementação real)
+    FontSizes.setFontScale(_fontScaleSelecionada.scale);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +58,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             Text(
               'CONFIGURAÇÕES',
               style: TextStyle(
-                fontSize: 28,
+                fontSize: FontSizes.display,
                 fontWeight: FontWeight.w900,
                 color: Theme.of(context).textTheme.titleLarge?.color,
               ),
@@ -61,6 +67,8 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             _buildSectionTitle(context, 'Aparência'),
             const SizedBox(height: 15),
             _buildThemeToggle(context),
+            const SizedBox(height: 20),
+            _buildFontScaleSelector(context),
             const SizedBox(height: 30),
             _buildSectionTitle(context, 'Sobre'),
             const SizedBox(height: 15),
@@ -87,9 +95,104 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
     return Text(
       title,
       style: TextStyle(
-        fontSize: 20,
+        fontSize: FontSizes.title,
         fontWeight: FontWeight.w700,
         color: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
+  Widget _buildFontScaleSelector(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.text_fields,
+                  size: 24,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tamanho da Fonte',
+                      style: TextStyle(
+                        fontSize: FontSizes.large,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Ajuste o tamanho do texto',
+                      style: TextStyle(
+                        fontSize: FontSizes.small,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Wrap(
+            spacing: 10,
+            children: FontScale.values.map((scale) {
+              return ChoiceChip(
+                label: Text(
+                  scale.label,
+                  style: TextStyle(
+                    fontSize: FontSizes.medium,
+                    fontWeight: _fontScaleSelecionada == scale 
+                        ? FontWeight.w600 
+                        : FontWeight.normal,
+                  ),
+                ),
+                selected: _fontScaleSelecionada == scale,
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() {
+                      _fontScaleSelecionada = scale;
+                      FontSizes.setFontScale(scale.scale);
+                    });
+                  }
+                },
+                selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                backgroundColor: Theme.of(context).cardColor,
+                side: BorderSide(
+                  color: _fontScaleSelecionada == scale 
+                      ? Theme.of(context).colorScheme.primary 
+                      : Colors.grey.withOpacity(0.3),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
@@ -130,7 +233,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                 Text(
                   'Modo Escuro',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: FontSizes.large,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
@@ -141,7 +244,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                       ? 'Tema escuro ativado' 
                       : 'Tema claro ativado',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: FontSizes.small,
                     color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                   ),
                 ),
@@ -205,7 +308,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: FontSizes.large,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
@@ -214,7 +317,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: FontSizes.small,
                     color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                   ),
                 ),
