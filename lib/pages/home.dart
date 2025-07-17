@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'calculadora.dart';
-import 'catalogo.dart';
 import 'configuracoes.dart';
 import '../providers/theme_provider.dart';
 import '../constants/app_constants.dart';
@@ -38,7 +37,7 @@ class HomePage extends StatelessWidget {
             _buildFunctionCard(
               context,
               'CALCULADORA',
-              'Calcule o valor de elevadores',
+              'Calcule o valor de elevadores e gere orçamentos',
               Icons.calculate,
               () {
                 Navigator.push(
@@ -49,36 +48,21 @@ class HomePage extends StatelessWidget {
                 );
               },
             ),
-            SizedBox(height: Dimensions.spacing),
-            _buildFunctionCard(
-              context,
-              'CATÁLOGO',
-              'Visualize produtos disponíveis',
-              Icons.list_alt,
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CatalogoPage(),
-                  ),
-                );
-              },
-            ),
-            SizedBox(height: Dimensions.spacing),
-            _buildFunctionCard(
-              context,
-              'ORÇAMENTOS',
-              'Gerencie seus orçamentos',
-              Icons.receipt_long,
-              () {
-                // TODO: Implementar tela de orçamentos
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Função em desenvolvimento'),
-                  ),
-                );
-              },
-            ),
+            // SizedBox(height: Dimensions.spacing),
+            // _buildFunctionCard(
+            //   context,
+            //   'CATÁLOGO',
+            //   'Visualize produtos disponíveis',
+            //   Icons.list_alt,
+            //   () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(
+            //         builder: (context) => const CatalogoPage(),
+            //       ),
+            //     );
+            //   },
+            // ),
             SizedBox(height: Dimensions.spacing),
             _buildFunctionCard(
               context,

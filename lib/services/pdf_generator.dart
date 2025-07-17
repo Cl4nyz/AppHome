@@ -131,6 +131,11 @@ class PDFGenerator {
     String observacao = '',
     bool galvanizado = false,
     int frete = 0,
+    int prazoEntrega = 20,
+    int numeroColunas = 1,
+    int numeroCabines = 1,
+    required double valorColuna,
+    required double valorCabine,
     required String alturaElevacao,
     required double preco,
     required String alturaCabine,
@@ -140,8 +145,8 @@ class PDFGenerator {
     final pdf = pw.Document();
     
     // Calcular valores a partir dos Maps
-    double valorColuna = Elevador.alturas[alturaElevacao] ?? 0;
-    double valorCabine = Elevador.cabines[alturaCabine] ?? 0;
+//    double valorColuna = Elevador.alturas[alturaElevacao] ?? 0;
+//    double valorCabine = Elevador.cabines[alturaCabine] ?? 0;
     
     // Carregar a logo
     final ByteData logoData = await rootBundle.load('assets/icons/home.png');
@@ -334,7 +339,7 @@ class PDFGenerator {
                     padding: const pw.EdgeInsets.all(8),
                     child: pw.Center(
                       child: pw.Text(
-                        '1',
+                        '$numeroColunas',
                         style: pw.TextStyle(font: ttf),
                       ),
                     ),
@@ -365,7 +370,7 @@ class PDFGenerator {
                     padding: const pw.EdgeInsets.all(8),
                     child: pw.Center(
                       child: pw.Text(
-                        '1',
+                        '$numeroCabines',
                         style: pw.TextStyle(font: ttf),
                       ),
                     ),
@@ -493,7 +498,7 @@ class PDFGenerator {
                 ],
                 ),
               
-              pw.SizedBox(height: 30),
+              pw.SizedBox(height: 20),
               
               pw.Text(
                 'CONDIÇÕES DE PAGAMENTO',
@@ -507,7 +512,11 @@ class PDFGenerator {
 
               pw.SizedBox(height: 5),
               pw.Text(
-                'Entrada de 40% na assinatura do contrato, saldo restante pode ser parcelado em 6x s/ juros no cartão.',
+                'Entrada de 40% na assinatura do contrato, saldo restante em uma das seguintes opções:\n'
+                '     • transferência no dia da entrega;\n'
+                '     • 5x no cartão de crédito sem juros;\n'
+                '     • 18x no cartão de crédito com juros;\n'
+                '     • boleto sujeito a consulta.',
                 style: pw.TextStyle(
                   fontSize: 12,
                   font: ttf,
@@ -755,9 +764,9 @@ class PDFGenerator {
                 ),
                 pw.SizedBox(height: 5),
                 pw.Text(
-                '• Prazo de entrega: 20 dias úteis após assinatura do contrato e entrada depositada\n'
+                '• Prazo de entrega: $prazoEntrega dias úteis após assinatura do contrato e entrada depositada\n'
                 '• Local de entrega definido pelo cliente\n'
-                '• Frete e instalação já incluso\n'
+                '• Frete e instalação já inclusos\n'
                 '• Transporte até o local de montagem\n'
                 '• Obs: Se necessário içamento, o custo fica por conta do CONTRATANTE\n'
                 '• Montagem do equipamento\n'

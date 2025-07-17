@@ -17,11 +17,10 @@ import '../constants/app_constants.dart';
 const TAM = 30.0;
 const TAMTITULO = 25.0;
 const TAMSETA = 45.0;
-const ALTGRANDE = 60.0;
+const ALTGRANDE = 50.0;
 const ALTPEQ = 32.0;
 const TEXTOGRAN = 22.0;
 const TEXTOPEQ = 18.0;
-const POSGALVANIZADO = 13;
 
 class CalculadoraPage extends StatefulWidget {
   const CalculadoraPage({super.key});
@@ -55,6 +54,23 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
   };
   bool _imagensInfoExpanded = false;
 
+  // Controle de configurações adicionais
+  bool _configuracoesExpanded = false;
+  
+  // Prazo de entrega
+  bool _prazoPersonalizado = false;
+  int _prazoEntrega = 20;
+  TextEditingController _prazoController = TextEditingController();
+  
+  // Colunas e cabines
+  bool _quantidadesVinculadas = true;
+  int _numeroColunas = 1;
+  int _numeroCabines = 1;
+  double _valorColuna = Elevador.alturas[Elevador.alturasKeys.first]?.toDouble() ?? 0;
+  double _valorCabine = Elevador.cabines[Elevador.cabinesKeys.first]?.toDouble() ?? 0;
+  TextEditingController _colunasController = TextEditingController();
+  TextEditingController _cabinesController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -71,6 +87,9 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
     _cidadeController.dispose();
     _estadoController.dispose();
     _observacoesController.dispose();
+    _prazoController.dispose();
+    _colunasController.dispose();
+    _cabinesController.dispose();
     super.dispose();
   }
   
@@ -102,21 +121,12 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
             ALTGRANDE,
             TEXTOGRAN
           ),
-          // if (pos <= 2)                          // Opção de trifásico somente para 3 primeiras alturas
-          //   _selectionBox(
-          //     bigTitle('É trifásico?'),
-          //     trifasico ? 'Sim' : 'Não',
-          //     ALTGRANDE,
-          //     TEXTOGRAN,
-          //     () => setState(() => trifasico = !trifasico),
-          //     () => setState(() => trifasico = !trifasico)
-          //   ),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 color: Theme.of(context).colorScheme.secondary,
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
@@ -138,6 +148,8 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
           _clienteInfoExpansionTile(),
           const SizedBox(height: 15),
           _imagensSelecaoExpansionTile(),
+          const SizedBox(height: 15),
+          _configuracoesExpansionTile(),
           const SizedBox(height: 15),
           _gerarPdfButton(),
           const SizedBox(height: 20),
@@ -205,13 +217,17 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
   }
 
   double totalValue() {
-    double value = Elevador.alturas[alturaElevacaoSelecionada] ?? 0;
-    value += Elevador.cabines[alturaCabineSelecionada] ?? 0;
+    _valorColuna = (Elevador.alturas[alturaElevacaoSelecionada])! * _numeroColunas;
+    _valorCabine = (Elevador.cabines[alturaCabineSelecionada])! * _numeroCabines;
     
+    double value = _valorColuna + _valorCabine;
+
     // Verificar se tem galvanizado
     String galvanizado = 'Aço carbono galvanizado';
     if (quantiasAdicionais[galvanizado] != null && quantiasAdicionais[galvanizado]! > 0) {
       value *= Elevador.adicionais[galvanizado] ?? 1;
+      _valorColuna *= Elevador.adicionais[galvanizado] ?? 1;
+      _valorCabine *= Elevador.adicionais[galvanizado] ?? 1;
     }
 
     double distancia = double.tryParse(_controller.text) ?? 0.0;
@@ -429,6 +445,17 @@ void _resetValues() {
       // Reset das imagens selecionadas
       imagensSelecionadas.updateAll((key, value) => true);
       _imagensInfoExpanded = false;
+      
+      // Reset das configurações
+      _configuracoesExpanded = false;
+      _prazoPersonalizado = false;
+      _prazoEntrega = 20;
+      _numeroColunas = 1;
+      _numeroCabines = 1;
+      _quantidadesVinculadas = true;
+      _prazoController.text = '20';
+      _colunasController.text = '1';
+      _cabinesController.text = '1';
     });
   }
 
@@ -476,6 +503,11 @@ void _resetValues() {
         cliente: _nomeController.text.isEmpty ? '' : _nomeController.text,
         tipoCliente: tipoCliente,
         observacao: _observacoesController.text,
+        prazoEntrega: _prazoEntrega,
+        numeroColunas: _numeroColunas,
+        numeroCabines: _numeroCabines,
+        valorColuna: _valorColuna,
+        valorCabine: _valorCabine,
         alturaElevacao: alturaElevacaoSelecionada,
         preco: totalValue(),
         alturaCabine: alturaCabineSelecionada,
@@ -488,9 +520,13 @@ void _resetValues() {
       );
 
       // Mostrar pré-visualização
+      String nomeCliente = _nomeController.text.trim().isEmpty ? 'Cliente' : _nomeController.text.trim();
+      String cidade = _cidadeController.text.trim().isEmpty ? 'Cidade' : _cidadeController.text.trim();
+      String estado = _estadoController.text.trim().isEmpty ? 'Estado' : _estadoController.text.trim();
+      
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdfBytes,
-        name: 'Orçamento_Elevador_${DateFormat('ddMMyyyy_HHmmss').format(DateTime.now())}',
+        name: '$nomeCliente - $cidade, $estado',
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -864,6 +900,257 @@ void _resetValues() {
     );
   }
 
+  Widget _configuracoesExpansionTile() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(Dimensions.borderRadius),
+        border: Border.all(color: AZUL_CLARO, width: 2),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _configuracoesExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _configuracoesExpanded = expanded;
+            });
+          },
+          leading: const Icon(
+            Icons.settings,
+            color: AZUL_ESCURO,
+            size: 24,
+          ),
+          title: Text(
+            'CONFIGURAÇÕES ADICIONAIS',
+            style: TextStyle(
+              color: AZUL_ESCURO,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        children: [
+          Padding(
+            padding: EdgeInsets.all(Dimensions.padding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Seção: Prazo de Entrega
+                Text(
+                  'Prazo de Entrega',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AZUL_ESCURO,
+                  ),
+                ),
+                SizedBox(height: Dimensions.paddingSmall),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AZUL_CLARO, width: 1),
+                    borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                  ),
+                  child: Column(
+                    children: [
+                      RadioListTile<bool>(
+                        title: const Text(
+                          'Padrão (20 dias)',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        value: false,
+                        groupValue: _prazoPersonalizado,
+                        activeColor: AZUL_ESCURO,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _prazoPersonalizado = value!;
+                            if (!_prazoPersonalizado) {
+                              _prazoEntrega = 20;
+                              _prazoController.text = '20';
+                            }
+                          });
+                        },
+                      ),
+                      RadioListTile<bool>(
+                        title: Row(
+                          children: [
+                            Text(
+                              'Personalizado:',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: SizedBox(
+                                width: 100,
+                                child: TextField(
+                                  controller: _prazoController,
+                                  enabled: _prazoPersonalizado,
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    hintText: 'Dias',
+                                    filled: true,
+                                    fillColor: Colors.grey[50],
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                                      borderSide: BorderSide(color: AZUL_CLARO, width: 1),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                                      borderSide: BorderSide(color: AZUL_ESCURO, width: 2),
+                                    ),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 15,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _prazoEntrega = int.tryParse(value) ?? 20;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        value: true,
+                        groupValue: _prazoPersonalizado,
+                        activeColor: AZUL_ESCURO,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _prazoPersonalizado = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Seção: Quantidade de Colunas
+                Text(
+                  'Quantidade de Colunas',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AZUL_ESCURO,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    SizedBox(
+                      width: 100,
+                      child: TextField(
+                        controller: _colunasController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: 'Colunas',
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                            borderSide: BorderSide(color: AZUL_CLARO, width: 1),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                            borderSide: BorderSide(color: AZUL_ESCURO, width: 2),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 15,
+                            vertical: 12,
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _numeroColunas = int.tryParse(value) ?? 1;
+                            if (_quantidadesVinculadas) {
+                              _numeroCabines = _numeroColunas;
+                              _cabinesController.text = _numeroColunas.toString();
+                            }
+                          });
+                        },
+                      ),
+                    ),
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: _quantidadesVinculadas,
+                            activeColor: AZUL_ESCURO,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                _quantidadesVinculadas = value!;
+                                if (_quantidadesVinculadas) {
+                                  _numeroCabines = _numeroColunas;
+                                  _cabinesController.text = _numeroColunas.toString();
+                                }
+                              });
+                            },
+                          ),
+                          Text(
+                            'Vincular com cabines',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 15),
+                
+                // Seção: Quantidade de Cabines
+                Text(
+                  'Quantidade de Cabines',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AZUL_ESCURO,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                SizedBox(
+                  width: 100,
+                  child: TextField(
+                    controller: _cabinesController,
+                    enabled: !_quantidadesVinculadas,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Cabines',
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                        borderSide: BorderSide(color: AZUL_CLARO, width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                        borderSide: BorderSide(color: AZUL_ESCURO, width: 2),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 12,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _numeroCabines = int.tryParse(value) ?? 1;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      )
+    );
+  }
+
   AppBar appBar() {
     return AppBar(
       backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
@@ -891,26 +1178,26 @@ void _resetValues() {
         ),
       ),
       actions: [
-        ElevatedButton(
-          onPressed: () {
-            _resetValues();
+        GestureDetector(
+          onTap: () {
+        _resetValues();
           },
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20), 
-            ),
-          ),
           child: Container(
-            margin: EdgeInsets.all(3),
+            margin: EdgeInsets.all(Dimensions.spacingSmall), // Usar constante centralizada
             alignment: Alignment.center,
-            width: 37,
-            child: SvgPicture.asset(
-              'assets/icons/circularArrow.svg',
-              height: 20,
-              width: 20
+            width: 50, // Igual à altura do AppBar
+            height: 50,
+            decoration: BoxDecoration(
+              color: Color(0xffF7F8F8),
+              borderRadius: BorderRadius.circular(Dimensions.borderRadius) // Usar constante centralizada
+            ),
+            child: Icon(
+              Icons.delete,
+              color: Theme.of(context).colorScheme.secondary,
+              size: 20,
             ),
           ),
-        )
+        ),
       ]
     );
   }
