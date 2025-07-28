@@ -124,6 +124,7 @@ class PDFGenerator {
   }
 
   static Future<Uint8List> generateOrcamentoPDF({
+    String vendedor = '',
     String cidade = '',
     String estado = '',
     String cliente = '',
@@ -134,13 +135,14 @@ class PDFGenerator {
     int prazoEntrega = 20,
     int numeroColunas = 1,
     int numeroCabines = 1,
-    required double valorColuna,
-    required double valorCabine,
+    double? valorColuna, // Agora pode ser null para ocultar
+    double? valorCabine, // Agora pode ser null para ocultar
     required String alturaElevacao,
     required double preco,
     required String alturaCabine,
     required List<Map<String, dynamic>> adicionais,
     Map<String, bool>? imagensSelecionadas,
+    bool ocultarValoresIndividuais = false, // Novo parâmetro
   }) async {
     final pdf = pw.Document();
     
@@ -219,6 +221,16 @@ class PDFGenerator {
 
               pw.SizedBox(height: 5),
 
+              if (vendedor.trim().isNotEmpty)
+                pw.Text(
+                  'VENDEDOR: $vendedor',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    font: ttf,
+                    color: const PdfColor.fromInt(PDF_ESCURO),
+                  ),
+                ),
+
               pw.Text(
                 'DATA: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}\n'
                 'REFERÊNCIA: Plataforma ${alturaCabine.contains('2,10') ? 'cabinada' : 'semicabinada'}',
@@ -231,7 +243,7 @@ class PDFGenerator {
 
               if (cidade.trim().isNotEmpty || estado.trim().isNotEmpty)
                 pw.Text(
-                  'CIDADE: $cidade, $estado',
+                  'CIDADE: $cidade${cidade.trim().isNotEmpty && estado.trim().isNotEmpty ? ', ' : ''}$estado',
                   style: pw.TextStyle(
                     fontSize: 12,
                     font: ttf,
@@ -348,7 +360,7 @@ class PDFGenerator {
                     padding: const pw.EdgeInsets.all(8),
                     child: pw.Center(
                       child: pw.Text(
-                        currencyFormatter.format(valorColuna),
+                        valorColuna != null ? currencyFormatter.format(valorColuna) : '-',
                         style: pw.TextStyle(font: ttf),
                       ),
                     ),
@@ -379,7 +391,7 @@ class PDFGenerator {
                     padding: const pw.EdgeInsets.all(8),
                     child: pw.Center(
                       child: pw.Text(
-                        currencyFormatter.format(valorCabine),
+                        valorCabine != null ? currencyFormatter.format(valorCabine) : '-',
                         style: pw.TextStyle(font: ttf),
                       ),
                     ),
@@ -444,7 +456,7 @@ class PDFGenerator {
                     padding: const pw.EdgeInsets.all(8),
                     child: pw.Center(
                       child: pw.Text(
-                        frete > 0 ? currencyFormatter.format(frete) : 'Cortesia',
+                        ocultarValoresIndividuais ? '-' : (frete > 0 ? currencyFormatter.format(frete) : 'Cortesia'),
                         style: pw.TextStyle(font: ttf),
                       ),
                     ),

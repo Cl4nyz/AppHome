@@ -12,6 +12,7 @@ import 'package:pdf/pdf.dart';
 
 import '../models/elevador.dart';
 import '../services/pdf_generator.dart';
+import '../services/settings_service.dart';
 import '../constants/app_constants.dart';
 
 const TAM = 30.0;
@@ -45,6 +46,9 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
   String tipoCliente = '';
   bool _clienteInfoExpanded = false;
 
+  // Controle do vendedor
+  String _nomeVendedor = '';
+
   // Controle de seleção de imagens para o PDF
   Map<String, bool> imagensSelecionadas = {
     'semicabinada': true,
@@ -56,6 +60,21 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
 
   // Controle de configurações adicionais
   bool _configuracoesExpanded = false;
+  
+  // Controle da aba de valores
+  bool _valoresExpanded = false;
+  Map<String, double> _valoresPersonalizados = {};
+  Map<String, TextEditingController> _valoresControllers = {};
+  double _porcentagemValor = 100.0; // Porcentagem padrão: 100%
+  bool _ocultarValoresIndividuais = false; // Controla se os valores individuais devem ser ocultados no PDF
+  bool _valorTotalPersonalizado = false; // Controla se o valor total é personalizado
+  double? _valorTotalCustom; // Valor total personalizado
+  TextEditingController _valorTotalController = TextEditingController();
+  
+  // Controle do frete personalizado
+  bool _fretePersonalizado = false;
+  double? _freteCustom;
+  TextEditingController _freteController = TextEditingController();
   
   // Prazo de entrega
   bool _prazoPersonalizado = false;
@@ -70,6 +89,9 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
   double _valorCabine = Elevador.cabines[Elevador.cabinesKeys.first]?.toDouble() ?? 0;
   TextEditingController _colunasController = TextEditingController();
   TextEditingController _cabinesController = TextEditingController();
+  
+  // Controller para porcentagem
+  TextEditingController _porcentagemController = TextEditingController();
 
   @override
   void initState() {
@@ -78,6 +100,49 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
     for (String adicional in Elevador.adicionaisKeys) {
       quantiasAdicionais[adicional] = 0;
     }
+    // Carregar nome do vendedor
+    _carregarNomeVendedor();
+    // Inicializar valores personalizados com valores padrão
+    _inicializarValoresPersonalizados();
+    // Inicializar controller de porcentagem
+    _porcentagemController.text = _porcentagemValor.toStringAsFixed(1).replaceAll('.', ',');
+  }
+
+  void _inicializarValoresPersonalizados() {
+    _valoresPersonalizados['coluna'] = (Elevador.alturas[alturaElevacaoSelecionada] ?? 0).toDouble();
+    _valoresPersonalizados['cabine'] = (Elevador.cabines[alturaCabineSelecionada] ?? 0).toDouble();
+    
+    // Inicializar valores dos adicionais
+    for (String adicional in Elevador.adicionaisKeys) {
+      if (adicional != 'Aço carbono galvanizado') {
+        _valoresPersonalizados[adicional] = (Elevador.adicionais[adicional] ?? 0).toDouble();
+      }
+    }
+    
+    // Inicializar controllers para valores
+    _valoresControllers['coluna'] = TextEditingController();
+    _valoresControllers['cabine'] = TextEditingController();
+    for (String adicional in Elevador.adicionaisKeys) {
+      if (adicional != 'Aço carbono galvanizado') {
+        _valoresControllers[adicional] = TextEditingController();
+      }
+    }
+    
+    // Inicializar textos dos controllers com formatação correta
+    _valoresControllers['coluna']?.text = _valoresPersonalizados['coluna']!.toStringAsFixed(2).replaceAll('.', ',');
+    _valoresControllers['cabine']?.text = _valoresPersonalizados['cabine']!.toStringAsFixed(2).replaceAll('.', ',');
+    for (String adicional in Elevador.adicionaisKeys) {
+      if (adicional != 'Aço carbono galvanizado') {
+        _valoresControllers[adicional]?.text = _valoresPersonalizados[adicional]!.toStringAsFixed(2).replaceAll('.', ',');
+      }
+    }
+  }
+
+  Future<void> _carregarNomeVendedor() async {
+    final nome = await SettingsService.obterNomeVendedor();
+    setState(() {
+      _nomeVendedor = nome;
+    });
   }
   
   @override
@@ -90,6 +155,15 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
     _prazoController.dispose();
     _colunasController.dispose();
     _cabinesController.dispose();
+    _porcentagemController.dispose();
+    _valorTotalController.dispose();
+    _freteController.dispose();
+    
+    // Dispose dos controllers de valores
+    _valoresControllers.forEach((key, controller) {
+      controller.dispose();
+    });
+    
     super.dispose();
   }
   
@@ -151,6 +225,8 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
           const SizedBox(height: 15),
           _configuracoesExpansionTile(),
           const SizedBox(height: 15),
+          _valoresExpansionTile(),
+          const SizedBox(height: 15),
           _gerarPdfButton(),
           const SizedBox(height: 20),
           //TextButton(
@@ -203,6 +279,13 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
     if (newIndex < 0) newIndex = alturas.length - 1;
     setState(() {
       alturaElevacaoSelecionada = alturas[newIndex];
+      // Atualizar valor personalizado se ainda não foi modificado manualmente
+      double valorPadrao = (Elevador.alturas[alturaElevacaoSelecionada] ?? 0).toDouble();
+      _valoresPersonalizados['coluna'] = valorPadrao;
+      // Atualizar controller com formatação correta
+      if (_valoresControllers['coluna'] != null) {
+        _valoresControllers['coluna']!.text = valorPadrao.toStringAsFixed(2).replaceAll('.', ',');
+      }
     });
   }
 
@@ -213,12 +296,38 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
     if (newIndex < 0) newIndex = cabines.length - 1;
     setState(() {
       alturaCabineSelecionada = cabines[newIndex];
+      // Atualizar valor personalizado se ainda não foi modificado manualmente
+      double valorPadrao = (Elevador.cabines[alturaCabineSelecionada] ?? 0).toDouble();
+      _valoresPersonalizados['cabine'] = valorPadrao;
+      // Atualizar controller com formatação correta
+      if (_valoresControllers['cabine'] != null) {
+        _valoresControllers['cabine']!.text = valorPadrao.toStringAsFixed(2).replaceAll('.', ',');
+      }
     });
   }
 
   double totalValue() {
-    _valorColuna = (Elevador.alturas[alturaElevacaoSelecionada])! * _numeroColunas;
-    _valorCabine = (Elevador.cabines[alturaCabineSelecionada])! * _numeroCabines;
+    // Se valor total personalizado estiver ativo, usar ele
+    if (_valorTotalPersonalizado && _valorTotalCustom != null) {
+      return _valorTotalCustom!;
+    }
+    
+    return _calcularValorSemPersonalizacao();
+  }
+
+  double _calcularValorSemPersonalizacao() {
+    // Atualizar valores personalizados se não foram modificados manualmente
+    if (_valoresPersonalizados['coluna'] == (Elevador.alturas[alturaElevacaoSelecionada] ?? 0).toDouble()) {
+      _valoresPersonalizados['coluna'] = (Elevador.alturas[alturaElevacaoSelecionada] ?? 0).toDouble();
+    }
+    if (_valoresPersonalizados['cabine'] == (Elevador.cabines[alturaCabineSelecionada] ?? 0).toDouble()) {
+      _valoresPersonalizados['cabine'] = (Elevador.cabines[alturaCabineSelecionada] ?? 0).toDouble();
+    }
+    
+    // Aplicar porcentagem aos valores
+    double porcentagemMultiplicador = _porcentagemValor / 100.0;
+    _valorColuna = ((_valoresPersonalizados['coluna'] ?? 0) * porcentagemMultiplicador) * _numeroColunas;
+    _valorCabine = ((_valoresPersonalizados['cabine'] ?? 0) * porcentagemMultiplicador) * _numeroCabines;
     
     double value = _valorColuna + _valorCabine;
 
@@ -235,10 +344,12 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
       value += distancia * 6;
     }
     
-    // Somar valores dos adicionais (exceto galvanizado)
+    // Somar valores dos adicionais (exceto galvanizado) usando valores personalizados e porcentagem
     quantiasAdicionais.forEach((adicional, quantidade) {
       if (adicional != galvanizado && quantidade > 0) {
-        value += (Elevador.adicionais[adicional] ?? 0) * quantidade;
+        double valorPersonalizado = _valoresPersonalizados[adicional] ?? (Elevador.adicionais[adicional] ?? 0).toDouble();
+        double valorComPorcentagem = valorPersonalizado * porcentagemMultiplicador;
+        value += valorComPorcentagem * quantidade;
       }
     });
     
@@ -246,6 +357,11 @@ class _CalculadoraPageState extends State<CalculadoraPage> {
   }
 
   double calcularFrete() {
+    // Se frete personalizado estiver ativo, usar ele
+    if (_fretePersonalizado && _freteCustom != null) {
+      return _freteCustom!;
+    }
+    
     double distancia = double.tryParse(_controller.text) ?? 0.0;
     if (distancia > 100) {
       return distancia * 6;
@@ -456,48 +572,103 @@ void _resetValues() {
       _prazoController.text = '20';
       _colunasController.text = '1';
       _cabinesController.text = '1';
+      
+      // Reset dos valores personalizados
+      _valoresExpanded = false;
+      _porcentagemValor = 100.0;
+      _porcentagemController.text = _porcentagemValor.toStringAsFixed(1).replaceAll('.', ',');
+      _ocultarValoresIndividuais = false;
+      _valorTotalPersonalizado = false;
+      _valorTotalCustom = null;
+      _valorTotalController.clear();
+      _fretePersonalizado = false;
+      _freteCustom = null;
+      _freteController.clear();
+      _inicializarValoresPersonalizados();
     });
   }
 
   // Botão para gerar PDF
   Widget _gerarPdfButton() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: ElevatedButton(
-        onPressed: () async {
-          await _gerarPDF();
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.secondary,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Dimensions.borderRadius), // Usar constante centralizada
+    return Column(
+      children: [
+        // Confirmação do vendedor
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(Dimensions.borderRadius),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.person,
+                color: Theme.of(context).colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Vendedor: ${_nomeVendedor.isEmpty ? 'Não definido' : _nomeVendedor}',
+                style: TextStyle(
+                  fontSize: FontSizes.medium,
+                  fontWeight: FontWeight.w600,
+                  color: _nomeVendedor.isEmpty 
+                      ? Colors.red 
+                      : Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+            ],
           ),
         ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.picture_as_pdf, size: 24),
-            SizedBox(width: 10),
-            Text(
-              'GERAR ORÇAMENTO PDF',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+        const SizedBox(height: 15),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          child: ElevatedButton(
+            onPressed: () async {
+              await _gerarPDF();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(Dimensions.borderRadius), // Usar constante centralizada
               ),
             ),
-          ],
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.picture_as_pdf, size: 24),
+                SizedBox(width: 10),
+                Text(
+                  'GERAR ORÇAMENTO PDF',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
   // Função para gerar PDF
   Future<void> _gerarPDF() async {
     try {
+      // Calcular valores unitários com porcentagem aplicada para o PDF
+      double porcentagemMultiplicador = _porcentagemValor / 100.0;
+      double valorColunaUnitario = (_valoresPersonalizados['coluna'] ?? 0) * porcentagemMultiplicador;
+      double valorCabineUnitario = (_valoresPersonalizados['cabine'] ?? 0) * porcentagemMultiplicador;
       
       final pdfBytes = await PDFGenerator.generateOrcamentoPDF(
+        vendedor: _nomeVendedor,
         cidade: _cidadeController.text.isEmpty ? '' : _cidadeController.text,
         estado: _estadoController.text.isEmpty ? '' : _estadoController.text,
         cliente: _nomeController.text.isEmpty ? '' : _nomeController.text,
@@ -506,8 +677,8 @@ void _resetValues() {
         prazoEntrega: _prazoEntrega,
         numeroColunas: _numeroColunas,
         numeroCabines: _numeroCabines,
-        valorColuna: _valorColuna,
-        valorCabine: _valorCabine,
+        valorColuna: _ocultarValoresIndividuais ? null : valorColunaUnitario,
+        valorCabine: _ocultarValoresIndividuais ? null : valorCabineUnitario,
         alturaElevacao: alturaElevacaoSelecionada,
         preco: totalValue(),
         alturaCabine: alturaCabineSelecionada,
@@ -517,6 +688,7 @@ void _resetValues() {
             ? true
             : false,
         imagensSelecionadas: imagensSelecionadas,
+        ocultarValoresIndividuais: _ocultarValoresIndividuais,
       );
 
       // Mostrar pré-visualização
@@ -548,12 +720,16 @@ void _resetValues() {
   // Função para gerar lista de adicionais selecionados
   List<Map<String, dynamic>> _gerarAdicionaisMap() {
     List<Map<String, dynamic>> adicionais = [];
+    double porcentagemMultiplicador = _porcentagemValor / 100.0;
+    
     quantiasAdicionais.forEach((adicional, quantidade) {
       if (adicional != 'Aço carbono galvanizado' && quantidade > 0) {
+        double valorPersonalizado = _valoresPersonalizados[adicional] ?? (Elevador.adicionais[adicional] ?? 0).toDouble();
+        double valorComPorcentagem = valorPersonalizado * porcentagemMultiplicador;
         adicionais.add({
           'descricao': adicional,
           'quantidade': quantidade,
-          'valor': (Elevador.adicionais[adicional] ?? 0) * quantidade,
+          'valor': _ocultarValoresIndividuais ? null : (valorComPorcentagem * quantidade),
         });
       }
     });
@@ -1148,6 +1324,591 @@ void _resetValues() {
         ],
       ),
       )
+    );
+  }
+
+  Widget _valoresExpansionTile() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(Dimensions.borderRadius),
+        border: Border.all(color: AZUL_CLARO, width: 2),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _valoresExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _valoresExpanded = expanded;
+            });
+          },
+          leading: const Icon(
+            Icons.attach_money,
+            color: AZUL_ESCURO,
+            size: 24,
+          ),
+          title: Text(
+            'VALORES',
+            style: TextStyle(
+              color: AZUL_ESCURO,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          children: [
+            Padding(
+              padding: EdgeInsets.all(Dimensions.padding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ajuste geral de preços (porcentagem):',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AZUL_ESCURO,
+                    ),
+                  ),
+                  SizedBox(height: Dimensions.paddingSmall),
+                  
+                  // Controle de Porcentagem
+                  Container(
+                    padding: EdgeInsets.all(Dimensions.paddingSmall),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      border: Border.all(color: Colors.orange.withOpacity(0.3), width: 1),
+                      borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'PORCENTAGEM GERAL',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.orange[800],
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Multiplica todos os valores abaixo',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.orange[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          flex: 1,
+                          child: TextField(
+                            controller: _porcentagemController,
+                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              suffixText: '%',
+                              hintText: '100',
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                                borderSide: BorderSide(color: Colors.orange, width: 1),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                                borderSide: BorderSide(color: Colors.orange, width: 2),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
+                            ),
+                            onChanged: (value) {
+                              String cleanValue = value.replaceAll(',', '.').replaceAll(RegExp(r'[^\d.]'), '');
+                              double? parsedValue = double.tryParse(cleanValue);
+                              if (parsedValue != null && parsedValue >= 0) {
+                                setState(() {
+                                  _porcentagemValor = parsedValue;
+                                });
+                              }
+                            },
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange[800],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  SizedBox(height: Dimensions.padding),
+                  
+                  // Checkbox para ocultar valores individuais
+                  Container(
+                    padding: EdgeInsets.all(Dimensions.paddingSmall),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
+                      borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                    ),
+                    child: Row(
+                      children: [
+                        Checkbox(
+                          value: _ocultarValoresIndividuais,
+                          activeColor: Colors.red,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _ocultarValoresIndividuais = value ?? false;
+                            });
+                          },
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'OCULTAR VALORES INDIVIDUAIS NO PDF',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red[800],
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Mostra "-" no lugar dos valores unitários',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.red[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  SizedBox(height: Dimensions.padding),
+                  
+                  // Campo para valor total personalizado
+                  Container(
+                    padding: EdgeInsets.all(Dimensions.paddingSmall),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1),
+                      borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _valorTotalPersonalizado,
+                              activeColor: Colors.blue,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  _valorTotalPersonalizado = value ?? false;
+                                  if (!_valorTotalPersonalizado) {
+                                    _valorTotalCustom = null;
+                                    _valorTotalController.clear();
+                                  } else {
+                                    // Inicializar com o valor atual calculado (sem usar o valor personalizado)
+                                    double valorCalculado = _calcularValorSemPersonalizacao();
+                                    _valorTotalCustom = valorCalculado;
+                                    _valorTotalController.text = valorCalculado.toStringAsFixed(2).replaceAll('.', ',');
+                                  }
+                                });
+                              },
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'VALOR TOTAL PERSONALIZADO',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.blue[800],
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Substitui o cálculo automático',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.blue[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_valorTotalPersonalizado) ...[
+                          SizedBox(height: Dimensions.paddingSmall),
+                          TextField(
+                            controller: _valorTotalController,
+                            enabled: _valorTotalPersonalizado,
+                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              prefixText: 'R\$ ',
+                              hintText: '0,00',
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                                borderSide: BorderSide(color: Colors.blue, width: 1),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                                borderSide: BorderSide(color: Colors.blue, width: 2),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 15,
+                                vertical: 12,
+                              ),
+                            ),
+                            onChanged: (value) {
+                              String cleanValue = value.replaceAll(',', '.').replaceAll(RegExp(r'[^\d.]'), '');
+                              double? parsedValue = double.tryParse(cleanValue);
+                              if (parsedValue != null && parsedValue >= 0) {
+                                setState(() {
+                                  _valorTotalCustom = parsedValue;
+                                });
+                              }
+                            },
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue[800],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  
+                  SizedBox(height: Dimensions.padding),
+                  
+                  // Campo para frete personalizado
+                  Container(
+                    padding: EdgeInsets.all(Dimensions.paddingSmall),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      border: Border.all(color: Colors.green.withOpacity(0.3), width: 1),
+                      borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _fretePersonalizado,
+                              activeColor: Colors.green,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  _fretePersonalizado = value ?? false;
+                                  if (!_fretePersonalizado) {
+                                    _freteCustom = null;
+                                    _freteController.clear();
+                                  } else {
+                                    // Calcular frete sem usar valor personalizado para evitar recursão
+                                    double distancia = double.tryParse(_controller.text) ?? 0.0;
+                                    double freteCalculado = distancia > 100 ? distancia * 6 : 0;
+                                    _freteCustom = freteCalculado;
+                                    _freteController.text = freteCalculado.toStringAsFixed(2).replaceAll('.', ',');
+                                  }
+                                });
+                              },
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'FRETE PERSONALIZADO',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.green[800],
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Substitui o cálculo automático do frete',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.green[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_fretePersonalizado) ...[
+                          SizedBox(height: Dimensions.paddingSmall),
+                          TextField(
+                            controller: _freteController,
+                            enabled: _fretePersonalizado,
+                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              prefixText: 'R\$ ',
+                              hintText: '0,00',
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                                borderSide: BorderSide(color: Colors.green, width: 1),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                                borderSide: BorderSide(color: Colors.green, width: 2),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 15,
+                                vertical: 12,
+                              ),
+                            ),
+                            onChanged: (value) {
+                              String cleanValue = value.replaceAll(',', '.').replaceAll(RegExp(r'[^\d.]'), '');
+                              double? parsedValue = double.tryParse(cleanValue);
+                              if (parsedValue != null && parsedValue >= 0) {
+                                setState(() {
+                                  _freteCustom = parsedValue;
+                                });
+                              }
+                            },
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green[800],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  
+                  SizedBox(height: Dimensions.padding),
+                  
+                  Text(
+                    'Valores base que aparecerão no PDF:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AZUL_ESCURO,
+                    ),
+                  ),
+                  SizedBox(height: Dimensions.paddingSmall),
+                  
+                  // Mostrar apenas itens que serão incluídos no PDF
+                  ..._buildItensValoresSelecionados(),
+                  
+                  SizedBox(height: Dimensions.spacingSmall),
+                  Container(
+                    padding: EdgeInsets.all(Dimensions.paddingSmall * 1.5),
+                    decoration: BoxDecoration(
+                      color: AZUL_CLARO.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                      border: Border.all(color: AZUL_CLARO.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: AZUL_ESCURO,
+                          size: 18,
+                        ),
+                        SizedBox(width: Dimensions.paddingSmall),
+                        Expanded(
+                          child: Text(
+                            'Os valores base podem ser personalizados e serão multiplicados pela porcentagem geral antes de aparecer no PDF.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AZUL_ESCURO,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildItensValoresSelecionados() {
+    List<Widget> widgets = [];
+    
+    // Incluir coluna apenas se número de colunas > 0
+    if (_numeroColunas > 0) {
+      widgets.add(_buildValorItem(
+        'COLUNA DE ELEVAÇÃO',
+        'coluna',
+        'Valor unitário da coluna',
+      ));
+    }
+    
+    // Incluir cabine apenas se número de cabines > 0
+    if (_numeroCabines > 0) {
+      widgets.add(_buildValorItem(
+        'CABINE DO PASSAGEIRO',
+        'cabine',
+        'Valor unitário da cabine',
+      ));
+    }
+    
+    // Incluir apenas adicionais que estão selecionados (quantidade > 0)
+    for (String adicional in Elevador.adicionaisKeys) {
+      if (adicional != 'Aço carbono galvanizado' && 
+          quantiasAdicionais[adicional] != null && 
+          quantiasAdicionais[adicional]! > 0) {
+        widgets.add(_buildValorItem(
+          adicional.toUpperCase(),
+          adicional,
+          'Valor unitário do adicional',
+        ));
+      }
+    }
+    
+    return widgets;
+  }
+
+  Widget _buildValorItem(String titulo, String chave, String hint) {
+    double valorBase = _valoresPersonalizados[chave] ?? 0;
+    double valorComPorcentagem = valorBase * (_porcentagemValor / 100.0);
+    
+    // Garantir que o controller existe
+    if (!_valoresControllers.containsKey(chave)) {
+      _valoresControllers[chave] = TextEditingController();
+    }
+    
+    // Atualizar o texto do controller apenas se necessário
+    // Usar formatação sem pontos de milhares para entrada do usuário
+    String valorFormatado = valorBase.toStringAsFixed(2).replaceAll('.', ',');
+    if (_valoresControllers[chave]!.text != valorFormatado) {
+      _valoresControllers[chave]!.text = valorFormatado;
+    }
+    
+    return Container(
+      margin: EdgeInsets.only(bottom: Dimensions.paddingSmall),
+      padding: EdgeInsets.all(Dimensions.paddingSmall),
+      decoration: BoxDecoration(
+        border: Border.all(color: AZUL_CLARO.withOpacity(0.3), width: 1),
+        borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titulo,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AZUL_ESCURO,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      hint,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: _valoresControllers[chave],
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    prefixText: 'R\$ ',
+                    hintText: '0,00',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                      borderSide: BorderSide(color: AZUL_CLARO, width: 1),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(Dimensions.borderRadiusSmall),
+                      borderSide: BorderSide(color: AZUL_ESCURO, width: 2),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 12,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    String cleanValue = value.replaceAll(',', '.').replaceAll(RegExp(r'[^\d.]'), '');
+                    double? parsedValue = double.tryParse(cleanValue);
+                    if (parsedValue != null && parsedValue >= 0) {
+                      setState(() {
+                        _valoresPersonalizados[chave] = parsedValue;
+                      });
+                    }
+                  },
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AZUL_ESCURO,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_porcentagemValor != 100.0) ...[
+            SizedBox(height: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: Text(
+                'Valor final (${_porcentagemValor.toStringAsFixed(1)}%): R\$ ${NumberFormat('#,##0.00', 'pt_BR').format(valorComPorcentagem)}',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.orange[800],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

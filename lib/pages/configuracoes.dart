@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../providers/theme_provider.dart';
 import '../constants/app_constants.dart';
+import '../services/settings_service.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   final ThemeProvider themeProvider;
@@ -13,12 +14,37 @@ class ConfiguracoesPage extends StatefulWidget {
 
 class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
   FontScale _fontScaleSelecionada = FontScale.normal;
+  final TextEditingController _vendedorController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     // Aplicar a escala de fonte salva (seria melhor usar SharedPreferences em uma implementação real)
     FontSizes.setFontScale(_fontScaleSelecionada.scale);
+    _carregarNomeVendedor();
+  }
+
+  Future<void> _carregarNomeVendedor() async {
+    final nome = await SettingsService.obterNomeVendedor();
+    setState(() {
+      _vendedorController.text = nome;
+    });
+  }
+
+  Future<void> _salvarNomeVendedor() async {
+    await SettingsService.salvarNomeVendedor(_vendedorController.text);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Nome do vendedor salvo com sucesso!'),
+        backgroundColor: AZUL_CLARO,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _vendedorController.dispose();
+    super.dispose();
   }
 
   @override
@@ -64,6 +90,10 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               ),
             ),
             const SizedBox(height: 30),
+            _buildSectionTitle(context, 'Vendedor'),
+            const SizedBox(height: 15),
+            _buildVendedorCard(context),
+            const SizedBox(height: 30),
             _buildSectionTitle(context, 'Aparência'),
             const SizedBox(height: 15),
             _buildThemeToggle(context),
@@ -87,6 +117,97 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildVendedorCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.person,
+                  size: 24,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nome do Vendedor',
+                      style: TextStyle(
+                        fontSize: FontSizes.large,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Nome que aparecerá nos orçamentos',
+                      style: TextStyle(
+                        fontSize: FontSizes.small,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          TextField(
+            controller: _vendedorController,
+            decoration: InputDecoration(
+              hintText: 'Digite o nome do vendedor',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: Colors.grey.withOpacity(0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              suffixIcon: IconButton(
+                onPressed: _salvarNomeVendedor,
+                icon: Icon(
+                  Icons.save,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+            style: TextStyle(
+              fontSize: FontSizes.medium,
+            ),
+          ),
+        ],
       ),
     );
   }
